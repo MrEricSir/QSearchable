@@ -39,28 +39,28 @@ class KRunner1Adaptor : public QObject
 public:
     explicit KRunner1Adaptor(KRunnerBackend *backend)
         : QObject(backend)
-        , m_backend(backend)
+        , backend(backend)
     {
     }
 
 public slots:
     QList<KRunnerAction> Actions()
     {
-        return m_backend->actions();
+        return backend->actions();
     }
 
     QList<KRunnerMatch> Match(const QString &query)
     {
-        return m_backend->match(query);
+        return backend->match(query);
     }
 
     void Run(const QString &matchId, const QString &actionId)
     {
-        m_backend->run(matchId, actionId);
+        backend->run(matchId, actionId);
     }
 
 private:
-    KRunnerBackend *m_backend;
+    KRunnerBackend *backend;
 };
 
 KRunnerBackend::KRunnerBackend(QObject *parent)

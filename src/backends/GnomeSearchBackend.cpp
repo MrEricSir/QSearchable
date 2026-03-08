@@ -41,38 +41,38 @@ class SearchProvider2Adaptor : public QObject
 public:
     explicit SearchProvider2Adaptor(GnomeSearchBackend *backend)
         : QObject(backend)
-        , m_backend(backend)
+        , backend(backend)
     {
     }
 
 public slots:
     QStringList GetInitialResultSet(const QStringList &terms)
     {
-        return m_backend->getInitialResultSet(terms);
+        return backend->getInitialResultSet(terms);
     }
 
     QStringList GetSubsearchResultSet(const QStringList &previousResults, const QStringList &terms)
     {
-        return m_backend->getSubsearchResultSet(previousResults, terms);
+        return backend->getSubsearchResultSet(previousResults, terms);
     }
 
     QList<QVariantMap> GetResultMetas(const QStringList &identifiers)
     {
-        return m_backend->getResultMetas(identifiers);
+        return backend->getResultMetas(identifiers);
     }
 
     void ActivateResult(const QString &identifier, const QStringList &terms, uint timestamp)
     {
-        m_backend->activateResult(identifier, terms, timestamp);
+        backend->activateResult(identifier, terms, timestamp);
     }
 
     void LaunchSearch(const QStringList &terms, uint timestamp)
     {
-        m_backend->launchSearch(terms, timestamp);
+        backend->launchSearch(terms, timestamp);
     }
 
 private:
-    GnomeSearchBackend *m_backend;
+    GnomeSearchBackend *backend;
 };
 
 GnomeSearchBackend::GnomeSearchBackend(QObject *parent)

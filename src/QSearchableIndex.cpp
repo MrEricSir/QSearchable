@@ -47,19 +47,19 @@ QSearchableIndex::QSearchableIndex(QObject *parent)
 #ifdef Q_OS_MACOS
     backend = new CoreSpotlightBackend(this);
 #elif defined(Q_OS_WIN)
-    m_backend = new WindowsSearchBackend(this);
+    backend = new WindowsSearchBackend(this);
 #elif defined(Q_OS_LINUX)
     QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
     if (desktop.contains("KDE", Qt::CaseInsensitive))
-        m_backend = new KRunnerBackend(this);
+        backend = new KRunnerBackend(this);
     else if (desktop.contains("GNOME", Qt::CaseInsensitive)
              || desktop.contains("Unity", Qt::CaseInsensitive)
              || desktop.contains("Cinnamon", Qt::CaseInsensitive))
-        m_backend = new GnomeSearchBackend(this);
+        backend = new GnomeSearchBackend(this);
     else
-        m_backend = new NoOpBackend(this);
+        backend = new NoOpBackend(this);
 #else
-    m_backend = new NoOpBackend(this);
+    backend = new NoOpBackend(this);
 #endif
 
     connect(backend, &QSearchableIndexBackend::indexingSucceeded,
