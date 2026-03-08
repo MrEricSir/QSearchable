@@ -137,7 +137,7 @@ void TestQSearchableIndex::defaultIndexSingleton()
 void TestQSearchableIndex::isSupported()
 {
     QSearchableIndex *index = QSearchableIndex::Get();
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
     QVERIFY(index->isSupported());
 #else
     QVERIFY(!index->isSupported());
