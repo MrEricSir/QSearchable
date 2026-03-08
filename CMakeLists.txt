@@ -34,6 +34,7 @@ if(APPLE)
     target_link_libraries(QSearchable PRIVATE
         "-framework CoreSpotlight"
         "-framework CoreServices"
+        "-framework UniformTypeIdentifiers"
     )
 elseif(WIN32)
     target_sources(QSearchable PRIVATE

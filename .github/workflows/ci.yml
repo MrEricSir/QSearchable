@@ -46,9 +46,8 @@ jobs:
           cache: true
 
       - name: Generate documentation
-        run: qdoc docs/qsearchable.qdocconf --outputdir build/docs --debug
+        run: qdoc docs/qsearchable.qdocconf --outputdir build/docs
         env:
-          QT_DIR: ${{ env.QT_ROOT_DIR }}
           QT_INSTALL_HEADERS: ${{ env.QT_ROOT_DIR }}/include
           QT_INSTALL_DOCS: ${{ env.QT_ROOT_DIR }}/doc
 

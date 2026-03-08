@@ -28,8 +28,9 @@ void SearchableItemStore::addItems(const QList<QSearchableItem> &items)
         const QString &id = item.uniqueIdentifier();
 
         // Remove old domain mapping if replacing an existing item
-        if (m_items.contains(id)) {
-            const QString &oldDomain = m_items.value(id).domainIdentifier();
+        auto existingIt = m_items.find(id);
+        if (existingIt != m_items.end()) {
+            const QString &oldDomain = existingIt->domainIdentifier();
             if (!oldDomain.isEmpty()) {
                 m_domainToIds.remove(oldDomain, id);
             }
@@ -46,12 +47,13 @@ void SearchableItemStore::addItems(const QList<QSearchableItem> &items)
 void SearchableItemStore::removeItems(const QStringList &identifiers)
 {
     for (const QString &id : identifiers) {
-        if (m_items.contains(id)) {
-            const QString &domain = m_items.value(id).domainIdentifier();
+        auto it = m_items.find(id);
+        if (it != m_items.end()) {
+            const QString &domain = it->domainIdentifier();
             if (!domain.isEmpty()) {
                 m_domainToIds.remove(domain, id);
             }
-            m_items.remove(id);
+            m_items.erase(it);
         }
     }
 }
@@ -88,7 +90,9 @@ QList<QSearchableItem> SearchableItemStore::search(const QStringList &terms) con
 
 QSearchableItem SearchableItemStore::item(const QString &identifier) const
 {
-    return m_items.value(identifier);
+    auto it = m_items.find(identifier);
+    Q_ASSERT(it != m_items.end());
+    return it.value();
 }
 
 bool SearchableItemStore::contains(const QString &identifier) const

@@ -1,13 +1,27 @@
-project     = QSearchable
-description = QSearchable Reference Documentation
-version     = $QT_VERSION
+project = QSearchable
+module = QSearchable
+version = 1.0.0
+
+headerdirs = ../src
+sourcedirs = ../src
 
 headers.fileextensions = "*.h"
-sources.fileextensions = "*.cpp *.mm *.qdoc"
+sources.fileextensions = "*.cpp *.mm"
 
-headerdirs  = ../src
-sourcedirs  = ../src
+documentationinheaders = true
+moduleheader = QSearchableIndex.h
 
-depends += qtcore
+depends = qtcore
 
-navigation.landingpage = "QSearchable"
+includepaths += ../src \
+                ../src/backends \
+                $QT_INSTALL_HEADERS \
+                $QT_INSTALL_HEADERS/QtCore
+
+outputdir = html
+outputformats = HTML
+
+HTML.stylesheets = $QT_INSTALL_DOCS/global/template/style/offline.css
+HTML.headerstyles = " \
+    <link rel=\"stylesheet\" type=\"text/css\" href=\"style/offline.css\" /> \
+"
