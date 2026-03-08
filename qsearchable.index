@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE QDOCINDEX>
+<INDEX url="" title="QSearchable Reference Documentation" version="1.0.0" project="QSearchable">
+    <namespace name="" status="active" access="public" module="qsearchable">
+        <class name="QSearchableIndex" href="qsearchableindex.html" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="79" documented="true" bases="QObject" module="QSearchable" brief="Indexes application content for the platform's native search provider">
+            <contents name="example" title="Example" level="1"/>
+            <function name="Get" fullname="QSearchableIndex::Get" href="qsearchableindex.html#Get" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="87" documented="true" meta="plain" static="true" type="QSearchableIndex *" signature="QSearchableIndex * Get()"/>
+            <function name="activated" fullname="QSearchableIndex::activated" href="qsearchableindex.html#activated" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="138" documented="true" meta="signal" type="void" signature="void activated(const QString &amp;uniqueIdentifier)">
+                <parameter type="const QString &amp;" name="uniqueIdentifier" default=""/>
+            </function>
+            <function name="errorOccurred" fullname="QSearchableIndex::errorOccurred" href="qsearchableindex.html#errorOccurred" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="132" documented="true" meta="signal" type="void" signature="void errorOccurred(const QString &amp;errorMessage)">
+                <parameter type="const QString &amp;" name="errorMessage" default=""/>
+            </function>
+            <function name="indexItems" fullname="QSearchableIndex::indexItems" href="qsearchableindex.html#indexItems" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="98" documented="true" meta="plain" type="void" signature="void indexItems(const QList&lt;QSearchableItem&gt; &amp;items)">
+                <parameter type="const QList&lt;QSearchableItem&gt; &amp;" name="items" default=""/>
+            </function>
+            <function name="indexingSucceeded" fullname="QSearchableIndex::indexingSucceeded" href="qsearchableindex.html#indexingSucceeded" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="121" documented="true" meta="signal" type="void" signature="void indexingSucceeded(int count)">
+                <parameter type="int" name="count" default=""/>
+            </function>
+            <function name="isSupported" fullname="QSearchableIndex::isSupported" href="qsearchableindex.html#isSupported" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="92" documented="true" meta="plain" const="true" type="bool" signature="bool isSupported() const"/>
+            <function name="removalSucceeded" fullname="QSearchableIndex::removalSucceeded" href="qsearchableindex.html#removalSucceeded" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="126" documented="true" meta="signal" type="void" signature="void removalSucceeded()"/>
+            <function name="removeAllItems" fullname="QSearchableIndex::removeAllItems" href="qsearchableindex.html#removeAllItems" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="114" documented="true" meta="plain" type="void" signature="void removeAllItems()"/>
+            <function name="removeItems" fullname="QSearchableIndex::removeItems" href="qsearchableindex.html#removeItems" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="103" documented="true" meta="plain" type="void" signature="void removeItems(const QStringList &amp;identifiers)">
+                <parameter type="const QStringList &amp;" name="identifiers" default=""/>
+            </function>
+            <function name="removeItemsInDomains" fullname="QSearchableIndex::removeItemsInDomains" href="qsearchableindex.html#removeItemsInDomains" status="active" access="public" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="109" documented="true" meta="plain" type="void" signature="void removeItemsInDomains(const QStringList &amp;domainIdentifiers)">
+                <parameter type="const QStringList &amp;" name="domainIdentifiers" default=""/>
+            </function>
+        </class>
+        <class name="QSearchableItem" href="qsearchableitem.html" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="50" documented="true" module="QSearchable" brief="Describes an item to be indexed for platform search">
+            <function name="QSearchableItem" fullname="QSearchableItem::QSearchableItem" href="qsearchableitem.html#QSearchableItem" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="59" documented="true" meta="constructor" explicit="true" signature="QSearchableItem(const QString &amp;uniqueIdentifier)">
+                <parameter type="const QString &amp;" name="uniqueIdentifier" default=""/>
+            </function>
+            <function name="contentDescription" fullname="QSearchableItem::contentDescription" href="qsearchableitem.html#contentDescription" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="97" documented="true" meta="plain" const="true" type="QString" signature="QString contentDescription() const"/>
+            <function name="contentType" fullname="QSearchableItem::contentType" href="qsearchableitem.html#contentType" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="137" documented="true" meta="plain" const="true" type="QString" signature="QString contentType() const"/>
+            <function name="displayName" fullname="QSearchableItem::displayName" href="qsearchableitem.html#displayName" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="107" documented="true" meta="plain" const="true" type="QString" signature="QString displayName() const"/>
+            <function name="domainIdentifier" fullname="QSearchableItem::domainIdentifier" href="qsearchableitem.html#domainIdentifier" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="77" documented="true" meta="plain" const="true" type="QString" signature="QString domainIdentifier() const"/>
+            <function name="keywords" fullname="QSearchableItem::keywords" href="qsearchableitem.html#keywords" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="117" documented="true" meta="plain" const="true" type="QStringList" signature="QStringList keywords() const"/>
+            <function name="setContentDescription" fullname="QSearchableItem::setContentDescription" href="qsearchableitem.html#setContentDescription" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="92" documented="true" meta="plain" type="void" signature="void setContentDescription(const QString &amp;contentDescription)">
+                <parameter type="const QString &amp;" name="contentDescription" default=""/>
+            </function>
+            <function name="setContentType" fullname="QSearchableItem::setContentType" href="qsearchableitem.html#setContentType" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="132" documented="true" meta="plain" type="void" signature="void setContentType(const QString &amp;contentType)">
+                <parameter type="const QString &amp;" name="contentType" default=""/>
+            </function>
+            <function name="setDisplayName" fullname="QSearchableItem::setDisplayName" href="qsearchableitem.html#setDisplayName" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="102" documented="true" meta="plain" type="void" signature="void setDisplayName(const QString &amp;displayName)">
+                <parameter type="const QString &amp;" name="displayName" default=""/>
+            </function>
+            <function name="setDomainIdentifier" fullname="QSearchableItem::setDomainIdentifier" href="qsearchableitem.html#setDomainIdentifier" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="72" documented="true" meta="plain" type="void" signature="void setDomainIdentifier(const QString &amp;domainIdentifier)">
+                <parameter type="const QString &amp;" name="domainIdentifier" default=""/>
+            </function>
+            <function name="setKeywords" fullname="QSearchableItem::setKeywords" href="qsearchableitem.html#setKeywords" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="112" documented="true" meta="plain" type="void" signature="void setKeywords(const QStringList &amp;keywords)">
+                <parameter type="const QStringList &amp;" name="keywords" default=""/>
+            </function>
+            <function name="setThumbnailData" fullname="QSearchableItem::setThumbnailData" href="qsearchableitem.html#setThumbnailData" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="122" documented="true" meta="plain" type="void" signature="void setThumbnailData(const QByteArray &amp;thumbnailData)">
+                <parameter type="const QByteArray &amp;" name="thumbnailData" default=""/>
+            </function>
+            <function name="setTimestamp" fullname="QSearchableItem::setTimestamp" href="qsearchableitem.html#setTimestamp" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="152" documented="true" meta="plain" type="void" signature="void setTimestamp(const QDateTime &amp;timestamp)">
+                <parameter type="const QDateTime &amp;" name="timestamp" default=""/>
+            </function>
+            <function name="setTitle" fullname="QSearchableItem::setTitle" href="qsearchableitem.html#setTitle" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="82" documented="true" meta="plain" type="void" signature="void setTitle(const QString &amp;title)">
+                <parameter type="const QString &amp;" name="title" default=""/>
+            </function>
+            <function name="setUrl" fullname="QSearchableItem::setUrl" href="qsearchableitem.html#setUrl" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="142" documented="true" meta="plain" type="void" signature="void setUrl(const QUrl &amp;url)">
+                <parameter type="const QUrl &amp;" name="url" default=""/>
+            </function>
+            <function name="thumbnailData" fullname="QSearchableItem::thumbnailData" href="qsearchableitem.html#thumbnailData" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="127" documented="true" meta="plain" const="true" type="QByteArray" signature="QByteArray thumbnailData() const"/>
+            <function name="timestamp" fullname="QSearchableItem::timestamp" href="qsearchableitem.html#timestamp" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="157" documented="true" meta="plain" const="true" type="QDateTime" signature="QDateTime timestamp() const"/>
+            <function name="title" fullname="QSearchableItem::title" href="qsearchableitem.html#title" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="87" documented="true" meta="plain" const="true" type="QString" signature="QString title() const"/>
+            <function name="uniqueIdentifier" fullname="QSearchableItem::uniqueIdentifier" href="qsearchableitem.html#uniqueIdentifier" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="67" documented="true" meta="plain" const="true" type="QString" signature="QString uniqueIdentifier() const"/>
+            <function name="url" fullname="QSearchableItem::url" href="qsearchableitem.html#url" status="active" access="public" location="QSearchableItem.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableItem.h" lineno="147" documented="true" meta="plain" const="true" type="QUrl" signature="QUrl url() const"/>
+        </class>
+        <module name="QSearchable" href="qsearchable-module.html" status="active" location="QSearchableIndex.h" filepath="/home/runner/work/QSearchable/QSearchable/src/QSearchableIndex.h" lineno="40" documented="true" seen="true" title="QSearchable C++ Classes" brief="Integrates local desktop search with your cross-platform Qt app"/>
+    </namespace>
+</INDEX>

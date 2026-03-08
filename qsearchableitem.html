@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<!-- QSearchableItem.h -->
+  <meta name="description" content="The QSearchableItem class describes an item to be indexed for platform search.">
+  <title>QSearchableItem Class | QSearchable 1.0.0</title>
+     <link rel="stylesheet" type="text/css" href="style/offline.css" /> </head>
+<body>
+<li><a href="qsearchable-module.html" translate="no">QSearchable</a></li>
+<li>QSearchableItem</li>
+<div class="sidebar">
+<div class="toc">
+<h3 id="toc">Contents</h3>
+<ul>
+<li class="level1"><a href="#public-functions">Public Functions</a></li>
+<li class="level1"><a href="#details">Detailed Description</a></li>
+</ul>
+</div>
+<div class="sidebar-content" id="sidebar-content"></div></div>
+<h1 class="title" translate="no">QSearchableItem Class</h1>
+<!-- $$$QSearchableItem-brief -->
+<p>The QSearchableItem class describes an item to be indexed for platform search. <a href="#details">More...</a></p>
+<!-- @@@QSearchableItem -->
+<div class="table"><table class="alignedsummary requisites" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> Header:</td><td class="memItemRight bottomAlign"> <code translate="no">#include &lt;QSearchableItem&gt;</code></td></tr>
+</table></div>
+<ul>
+<li><a href="qsearchableitem-members.html">List of all members, including inherited members</a></li>
+</ul>
+<h2 id="public-functions">Public Functions</h2>
+<div class="table"><table class="alignedsummary" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#QSearchableItem" translate="no">QSearchableItem</a></b>(const QString &amp;<i>uniqueIdentifier</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#contentDescription" translate="no">contentDescription</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#contentType" translate="no">contentType</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#displayName" translate="no">displayName</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#domainIdentifier" translate="no">domainIdentifier</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QStringList </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#keywords" translate="no">keywords</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setContentDescription" translate="no">setContentDescription</a></b>(const QString &amp;<i>contentDescription</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setContentType" translate="no">setContentType</a></b>(const QString &amp;<i>contentType</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setDisplayName" translate="no">setDisplayName</a></b>(const QString &amp;<i>displayName</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setDomainIdentifier" translate="no">setDomainIdentifier</a></b>(const QString &amp;<i>domainIdentifier</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setKeywords" translate="no">setKeywords</a></b>(const QStringList &amp;<i>keywords</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setThumbnailData" translate="no">setThumbnailData</a></b>(const QByteArray &amp;<i>thumbnailData</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setTimestamp" translate="no">setTimestamp</a></b>(const QDateTime &amp;<i>timestamp</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setTitle" translate="no">setTitle</a></b>(const QString &amp;<i>title</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#setUrl" translate="no">setUrl</a></b>(const QUrl &amp;<i>url</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QByteArray </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#thumbnailData" translate="no">thumbnailData</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QDateTime </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#timestamp" translate="no">timestamp</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#title" translate="no">title</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QString </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#uniqueIdentifier" translate="no">uniqueIdentifier</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QUrl </td><td class="memItemRight bottomAlign"><b><a href="qsearchableitem.html#url" translate="no">url</a></b>() const</td></tr>
+</table></div>
+<!-- $$$QSearchableItem-description -->
+<div class="descr">
+<h2 id="details">Detailed Description</h2>
+<p>Each item has a mandatory <a href="qsearchableitem.html#uniqueIdentifier" translate="no">uniqueIdentifier</a> and optional metadata such as <a href="qsearchableitem.html#title" translate="no">title</a>, <a href="qsearchableitem.html#contentDescription" translate="no">contentDescription</a>, <a href="qsearchableitem.html#keywords" translate="no">keywords</a>, and more. Items can be grouped by <a href="qsearchableitem.html#domainIdentifier" translate="no">domainIdentifier</a> so they can be removed as a batch with <a href="qsearchableindex.html#removeItemsInDomains" translate="no">QSearchableIndex::removeItemsInDomains</a>().</p>
+<p>QSearchableItem uses implicit sharing, so copies are inexpensive.</p>
+</div>
+<p><b>See also </b><a href="qsearchableindex.html" translate="no">QSearchableIndex</a>.</p>
+<!-- @@@QSearchableItem -->
+<div class="func">
+<h2>Member Function Documentation</h2>
+<!-- $$$QSearchableItem[overload1]$$$QSearchableItemconstQString& -->
+<h3 class="fn" translate="no" id="QSearchableItem"><code class="details extra" translate="no">[explicit]</code> QSearchableItem::<span class="name">QSearchableItem</span>(const <span class="type">QString</span> &amp;<i>uniqueIdentifier</i>)</h3>
+<p>Constructs an item with the given <i translate="no">uniqueIdentifier</i>.</p>
+<p>The identifier must be unique within the search index and is used to update or remove the item later.</p>
+<!-- @@@QSearchableItem -->
+<!-- $$$contentDescription[overload1]$$$contentDescription -->
+<h3 class="fn" translate="no" id="contentDescription"><span class="type">QString</span> QSearchableItem::<span class="name">contentDescription</span>() const</h3>
+<p>Returns the content description.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setContentDescription" translate="no">setContentDescription</a>().</p>
+<!-- @@@contentDescription -->
+<!-- $$$contentType[overload1]$$$contentType -->
+<h3 class="fn" translate="no" id="contentType"><span class="type">QString</span> QSearchableItem::<span class="name">contentType</span>() const</h3>
+<p>Returns the content type.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setContentType" translate="no">setContentType</a>().</p>
+<!-- @@@contentType -->
+<!-- $$$displayName[overload1]$$$displayName -->
+<h3 class="fn" translate="no" id="displayName"><span class="type">QString</span> QSearchableItem::<span class="name">displayName</span>() const</h3>
+<p>Returns the display name.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setDisplayName" translate="no">setDisplayName</a>().</p>
+<!-- @@@displayName -->
+<!-- $$$domainIdentifier[overload1]$$$domainIdentifier -->
+<h3 class="fn" translate="no" id="domainIdentifier"><span class="type">QString</span> QSearchableItem::<span class="name">domainIdentifier</span>() const</h3>
+<p>Returns the domain identifier, or an empty string if none was set.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setDomainIdentifier" translate="no">setDomainIdentifier</a>().</p>
+<!-- @@@domainIdentifier -->
+<!-- $$$keywords[overload1]$$$keywords -->
+<h3 class="fn" translate="no" id="keywords"><span class="type">QStringList</span> QSearchableItem::<span class="name">keywords</span>() const</h3>
+<p>Returns the keywords.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setKeywords" translate="no">setKeywords</a>().</p>
+<!-- @@@keywords -->
+<!-- $$$setContentDescription[overload1]$$$setContentDescriptionconstQString& -->
+<h3 class="fn" translate="no" id="setContentDescription"><span class="type">void</span> QSearchableItem::<span class="name">setContentDescription</span>(const <span class="type">QString</span> &amp;<i>contentDescription</i>)</h3>
+<p>Sets the <i translate="no">contentDescription</i> shown as secondary text in search results.</p>
+<p><b>See also </b><a href="qsearchableitem.html#contentDescription" translate="no">contentDescription</a>().</p>
+<!-- @@@setContentDescription -->
+<!-- $$$setContentType[overload1]$$$setContentTypeconstQString& -->
+<h3 class="fn" translate="no" id="setContentType"><span class="type">void</span> QSearchableItem::<span class="name">setContentType</span>(const <span class="type">QString</span> &amp;<i>contentType</i>)</h3>
+<p>Sets the MIME <i translate="no">contentType</i> of the item.</p>
+<p><b>See also </b><a href="qsearchableitem.html#contentType" translate="no">contentType</a>().</p>
+<!-- @@@setContentType -->
+<!-- $$$setDisplayName[overload1]$$$setDisplayNameconstQString& -->
+<h3 class="fn" translate="no" id="setDisplayName"><span class="type">void</span> QSearchableItem::<span class="name">setDisplayName</span>(const <span class="type">QString</span> &amp;<i>displayName</i>)</h3>
+<p>Sets the <i translate="no">displayName</i> for the item.</p>
+<p><b>See also </b><a href="qsearchableitem.html#displayName" translate="no">displayName</a>().</p>
+<!-- @@@setDisplayName -->
+<!-- $$$setDomainIdentifier[overload1]$$$setDomainIdentifierconstQString& -->
+<h3 class="fn" translate="no" id="setDomainIdentifier"><span class="type">void</span> QSearchableItem::<span class="name">setDomainIdentifier</span>(const <span class="type">QString</span> &amp;<i>domainIdentifier</i>)</h3>
+<p>Sets the <i translate="no">domainIdentifier</i> used to group related items.</p>
+<p><b>See also </b><a href="qsearchableitem.html#domainIdentifier" translate="no">domainIdentifier</a>().</p>
+<!-- @@@setDomainIdentifier -->
+<!-- $$$setKeywords[overload1]$$$setKeywordsconstQStringList& -->
+<h3 class="fn" translate="no" id="setKeywords"><span class="type">void</span> QSearchableItem::<span class="name">setKeywords</span>(const <span class="type">QStringList</span> &amp;<i>keywords</i>)</h3>
+<p>Sets the <i translate="no">keywords</i> used for matching search queries.</p>
+<p><b>See also </b><a href="qsearchableitem.html#keywords" translate="no">keywords</a>().</p>
+<!-- @@@setKeywords -->
+<!-- $$$setThumbnailData[overload1]$$$setThumbnailDataconstQByteArray& -->
+<h3 class="fn" translate="no" id="setThumbnailData"><span class="type">void</span> QSearchableItem::<span class="name">setThumbnailData</span>(const <span class="type">QByteArray</span> &amp;<i>thumbnailData</i>)</h3>
+<p>Sets the <i translate="no">thumbnailData</i> (e.g. PNG or JPEG bytes) for the item.</p>
+<p><b>See also </b><a href="qsearchableitem.html#thumbnailData" translate="no">thumbnailData</a>().</p>
+<!-- @@@setThumbnailData -->
+<!-- $$$setTimestamp[overload1]$$$setTimestampconstQDateTime& -->
+<h3 class="fn" translate="no" id="setTimestamp"><span class="type">void</span> QSearchableItem::<span class="name">setTimestamp</span>(const <span class="type">QDateTime</span> &amp;<i>timestamp</i>)</h3>
+<p>Sets the <i translate="no">timestamp</i> for the item's content.</p>
+<p><b>See also </b><a href="qsearchableitem.html#timestamp" translate="no">timestamp</a>().</p>
+<!-- @@@setTimestamp -->
+<!-- $$$setTitle[overload1]$$$setTitleconstQString& -->
+<h3 class="fn" translate="no" id="setTitle"><span class="type">void</span> QSearchableItem::<span class="name">setTitle</span>(const <span class="type">QString</span> &amp;<i>title</i>)</h3>
+<p>Sets the <i translate="no">title</i> displayed in search results.</p>
+<p><b>See also </b><a href="qsearchableitem.html#title" translate="no">title</a>().</p>
+<!-- @@@setTitle -->
+<!-- $$$setUrl[overload1]$$$setUrlconstQUrl& -->
+<h3 class="fn" translate="no" id="setUrl"><span class="type">void</span> QSearchableItem::<span class="name">setUrl</span>(const <span class="type">QUrl</span> &amp;<i>url</i>)</h3>
+<p>Sets a <i translate="no">url</i> associated with the item.</p>
+<p><b>See also </b><a href="qsearchableitem.html#url" translate="no">url</a>().</p>
+<!-- @@@setUrl -->
+<!-- $$$thumbnailData[overload1]$$$thumbnailData -->
+<h3 class="fn" translate="no" id="thumbnailData"><span class="type">QByteArray</span> QSearchableItem::<span class="name">thumbnailData</span>() const</h3>
+<p>Returns the thumbnail data.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setThumbnailData" translate="no">setThumbnailData</a>().</p>
+<!-- @@@thumbnailData -->
+<!-- $$$timestamp[overload1]$$$timestamp -->
+<h3 class="fn" translate="no" id="timestamp"><span class="type">QDateTime</span> QSearchableItem::<span class="name">timestamp</span>() const</h3>
+<p>Returns the timestamp.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setTimestamp" translate="no">setTimestamp</a>().</p>
+<!-- @@@timestamp -->
+<!-- $$$title[overload1]$$$title -->
+<h3 class="fn" translate="no" id="title"><span class="type">QString</span> QSearchableItem::<span class="name">title</span>() const</h3>
+<p>Returns the title.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setTitle" translate="no">setTitle</a>().</p>
+<!-- @@@title -->
+<!-- $$$uniqueIdentifier[overload1]$$$uniqueIdentifier -->
+<h3 class="fn" translate="no" id="uniqueIdentifier"><span class="type">QString</span> QSearchableItem::<span class="name">uniqueIdentifier</span>() const</h3>
+<p>Returns the unique identifier for this item.</p>
+<!-- @@@uniqueIdentifier -->
+<!-- $$$url[overload1]$$$url -->
+<h3 class="fn" translate="no" id="url"><span class="type">QUrl</span> QSearchableItem::<span class="name">url</span>() const</h3>
+<p>Returns the URL.</p>
+<p><b>See also </b><a href="qsearchableitem.html#setUrl" translate="no">setUrl</a>().</p>
+<!-- @@@url -->
+</div>
+</body>
+</html>

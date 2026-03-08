@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<!-- QSearchableIndex.h -->
+  <meta name="description" content="The QSearchableIndex class indexes application content for the platform's native search provider.">
+  <title>QSearchableIndex Class | QSearchable 1.0.0</title>
+     <link rel="stylesheet" type="text/css" href="style/offline.css" /> </head>
+<body>
+<li><a href="qsearchable-module.html" translate="no">QSearchable</a></li>
+<li>QSearchableIndex</li>
+<div class="sidebar">
+<div class="toc">
+<h3 id="toc">Contents</h3>
+<ul>
+<li class="level1"><a href="#public-functions">Public Functions</a></li>
+<li class="level1"><a href="#signals">Signals</a></li>
+<li class="level1"><a href="#static-public-members">Static Public Members</a></li>
+<li class="level1"><a href="#details">Detailed Description</a></li>
+<li class="level2"><a href="#example">Example</a></li>
+</ul>
+</div>
+<div class="sidebar-content" id="sidebar-content"></div></div>
+<h1 class="title" translate="no">QSearchableIndex Class</h1>
+<!-- $$$QSearchableIndex-brief -->
+<p>The QSearchableIndex class indexes application content for the platform's native search provider. <a href="#details">More...</a></p>
+<!-- @@@QSearchableIndex -->
+<div class="table"><table class="alignedsummary requisites" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> Header:</td><td class="memItemRight bottomAlign"> <code translate="no">#include &lt;QSearchableIndex&gt;</code></td></tr>
+</table></div>
+<ul>
+<li><a href="qsearchableindex-members.html">List of all members, including inherited members</a></li>
+</ul>
+<h2 id="public-functions">Public Functions</h2>
+<div class="table"><table class="alignedsummary" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#indexItems" translate="no">indexItems</a></b>(const QList&lt;QSearchableItem&gt; &amp;<i>items</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#isSupported" translate="no">isSupported</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeAllItems" translate="no">removeAllItems</a></b>()</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeItems" translate="no">removeItems</a></b>(const QStringList &amp;<i>identifiers</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeItemsInDomains" translate="no">removeItemsInDomains</a></b>(const QStringList &amp;<i>domainIdentifiers</i>)</td></tr>
+</table></div>
+<h2 id="signals">Signals</h2>
+<div class="table"><table class="alignedsummary" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#activated" translate="no">activated</a></b>(const QString &amp;<i>uniqueIdentifier</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#errorOccurred" translate="no">errorOccurred</a></b>(const QString &amp;<i>errorMessage</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#indexingSucceeded" translate="no">indexingSucceeded</a></b>(int <i>count</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removalSucceeded" translate="no">removalSucceeded</a></b>()</td></tr>
+</table></div>
+<h2 id="static-public-members">Static Public Members</h2>
+<div class="table"><table class="alignedsummary" translate="no">
+<tr><td class="memItemLeft rightAlign topAlign"> QSearchableIndex *</td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#Get" translate="no">Get</a></b>()</td></tr>
+</table></div>
+<!-- $$$QSearchableIndex-description -->
+<div class="descr">
+<h2 id="details">Detailed Description</h2>
+<p>The following platforms are supported:</p>
+<ul>
+<li><b>macOS</b>: Spotlight</li>
+<li><b>Windows</b>: Windows Search</li>
+<li><b>Linux (GNOME Shell)</b>: GNOME Tracker</li>
+<li><b>Linux (KDE Plasma)</b>: KRunner</li>
+</ul>
+<p>On unsupported platforms a no-op backend is used and <a href="qsearchableindex.html#isSupported" translate="no">isSupported</a>() returns <code translate="no">false</code>.</p>
+<p>QSearchableIndex is a singleton. Use <a href="qsearchableindex.html#Get" translate="no">Get</a>() to obtain the instance.</p>
+<h3 id="example">Example</h3>
+<pre class="cpp" translate="no"><span class="type"><a href="qsearchableitem.html" translate="no">QSearchableItem</a></span> item(<span class="string">&quot;contact-42&quot;</span>);
+item<span class="operator">.</span>setTitle(<span class="string">&quot;Alice&quot;</span>);
+item<span class="operator">.</span>setContentDescription(<span class="string">&quot;alice@example.com&quot;</span>);
+
+<span class="type"><a href="qsearchableindex.html" translate="no">QSearchableIndex</a></span><span class="operator">::</span>Get()<span class="operator">-</span><span class="operator">&gt;</span>indexItems({item});</pre>
+</div>
+<p><b>See also </b><a href="qsearchableitem.html" translate="no">QSearchableItem</a>.</p>
+<!-- @@@QSearchableIndex -->
+<div class="func">
+<h2>Member Function Documentation</h2>
+<!-- $$$Get[overload1]$$$Get -->
+<h3 class="fn" translate="no" id="Get"><code class="details extra" translate="no">[static]</code> <span class="type"><a href="qsearchableindex.html" translate="no">QSearchableIndex</a></span> *QSearchableIndex::<span class="name">Get</span>()</h3>
+<p>Returns the singleton instance.</p>
+<!-- @@@Get -->
+<!-- $$$activated[overload1]$$$activatedconstQString& -->
+<h3 class="fn" translate="no" id="activated"><code class="details extra" translate="no">[signal]</code> <span class="type">void</span> QSearchableIndex::<span class="name">activated</span>(const <span class="type">QString</span> &amp;<i>uniqueIdentifier</i>)</h3>
+<p>Emitted when the user activates a search result. <i translate="no">uniqueIdentifier</i> is the identifier of the activated item.</p>
+<!-- @@@activated -->
+<!-- $$$errorOccurred[overload1]$$$errorOccurredconstQString& -->
+<h3 class="fn" translate="no" id="errorOccurred"><code class="details extra" translate="no">[signal]</code> <span class="type">void</span> QSearchableIndex::<span class="name">errorOccurred</span>(const <span class="type">QString</span> &amp;<i>errorMessage</i>)</h3>
+<p>Emitted when an indexing or removal operation fails. <i translate="no">errorMessage</i> contains a human-readable description.</p>
+<!-- @@@errorOccurred -->
+<!-- $$$indexItems[overload1]$$$indexItemsconstQList<QSearchableItem>& -->
+<h3 class="fn" translate="no" id="indexItems"><span class="type">void</span> QSearchableIndex::<span class="name">indexItems</span>(const <span class="type">QList</span>&lt;<span class="type"><a href="qsearchableitem.html" translate="no">QSearchableItem</a></span>&gt; &amp;<i>items</i>)</h3>
+<p>Indexes (or updates) the given <i translate="no">items</i>. When the operation completes the <a href="qsearchableindex.html#indexingSucceeded" translate="no">indexingSucceeded</a>() signal is emitted.</p>
+<!-- @@@indexItems -->
+<!-- $$$indexingSucceeded[overload1]$$$indexingSucceededint -->
+<h3 class="fn" translate="no" id="indexingSucceeded"><code class="details extra" translate="no">[signal]</code> <span class="type">void</span> QSearchableIndex::<span class="name">indexingSucceeded</span>(<span class="type">int</span> <i>count</i>)</h3>
+<p>Emitted after <a href="qsearchableindex.html#indexItems" translate="no">indexItems</a>() completes successfully. <i translate="no">count</i> is the number of items that were indexed.</p>
+<!-- @@@indexingSucceeded -->
+<!-- $$$isSupported[overload1]$$$isSupported -->
+<h3 class="fn" translate="no" id="isSupported"><span class="type">bool</span> QSearchableIndex::<span class="name">isSupported</span>() const</h3>
+<p>Returns <code translate="no">true</code> if the current platform's search backend is supported.</p>
+<!-- @@@isSupported -->
+<!-- $$$removalSucceeded[overload1]$$$removalSucceeded -->
+<h3 class="fn" translate="no" id="removalSucceeded"><code class="details extra" translate="no">[signal]</code> <span class="type">void</span> QSearchableIndex::<span class="name">removalSucceeded</span>()</h3>
+<p>Emitted after a removal operation completes successfully.</p>
+<!-- @@@removalSucceeded -->
+<!-- $$$removeAllItems[overload1]$$$removeAllItems -->
+<h3 class="fn" translate="no" id="removeAllItems"><span class="type">void</span> QSearchableIndex::<span class="name">removeAllItems</span>()</h3>
+<p>Removes every item from the index.</p>
+<!-- @@@removeAllItems -->
+<!-- $$$removeItems[overload1]$$$removeItemsconstQStringList& -->
+<h3 class="fn" translate="no" id="removeItems"><span class="type">void</span> QSearchableIndex::<span class="name">removeItems</span>(const <span class="type">QStringList</span> &amp;<i>identifiers</i>)</h3>
+<p>Removes items matching the given <i translate="no">identifiers</i> from the index.</p>
+<!-- @@@removeItems -->
+<!-- $$$removeItemsInDomains[overload1]$$$removeItemsInDomainsconstQStringList& -->
+<h3 class="fn" translate="no" id="removeItemsInDomains"><span class="type">void</span> QSearchableIndex::<span class="name">removeItemsInDomains</span>(const <span class="type">QStringList</span> &amp;<i>domainIdentifiers</i>)</h3>
+<p>Removes all items whose domain identifier is in <i translate="no">domainIdentifiers</i>.</p>
+<!-- @@@removeItemsInDomains -->
+</div>
+</body>
+</html>
