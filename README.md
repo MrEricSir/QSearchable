@@ -1,5 +1,7 @@
 # QSearchable
 
+[![Unit Tests](https://github.com/MrEricSir/QSearchable/workflows/CI/badge.svg)](https://github.com/MrEricSir/QSearchable/actions)
+
 Integrates desktop search (Spotlight, Windows Search, etc.) into your Qt application
 
 ## Quick Start
