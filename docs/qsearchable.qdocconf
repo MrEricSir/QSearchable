@@ -1,0 +1,13 @@
+project     = QSearchable
+description = QSearchable Reference Documentation
+version     = $QT_VERSION
+
+headers.fileextensions = "*.h"
+sources.fileextensions = "*.cpp *.mm *.qdoc"
+
+headerdirs  = ../src
+sourcedirs  = ../src
+
+depends += qtcore
+
+navigation.landingpage = "QSearchable"

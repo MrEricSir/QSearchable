@@ -1,0 +1,61 @@
+// MIT License
+//
+// Copyright (c) 2026 Eric Gregory <mrericsir@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#ifndef QSEARCHABLEINDEXBACKEND_H
+#define QSEARCHABLEINDEXBACKEND_H
+
+#include "../QSearchableItem.h"
+
+#include <QList>
+#include <QObject>
+#include <QString>
+#include <QStringList>
+
+class QSearchableIndexBackend : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit QSearchableIndexBackend(QObject *parent = nullptr)
+        : QObject(parent)
+    {
+    }
+
+    virtual ~QSearchableIndexBackend() = default;
+
+    virtual bool isSupported() const = 0;
+
+    virtual void indexItems(const QList<QSearchableItem> &items) = 0;
+
+    virtual void removeItems(const QStringList &identifiers) = 0;
+    virtual void removeItemsInDomains(const QStringList &domainIdentifiers) = 0;
+    virtual void removeAllItems() = 0;
+
+signals:
+    void indexingSucceeded(int count);
+    void removalSucceeded();
+    void errorOccurred(const QString &errorMessage);
+    void activated(const QString &uniqueIdentifier);
+
+};
+
+#endif // QSEARCHABLEINDEXBACKEND_H

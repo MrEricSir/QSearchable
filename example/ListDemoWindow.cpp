@@ -1,0 +1,191 @@
+#include "ListDemoWindow.h"
+
+#include "QSearchableIndex.h"
+#include "QSearchableItem.h"
+
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+
+ListDemoWindow::ListDemoWindow(QWidget *parent)
+    : QWidget(parent)
+{
+    setWindowTitle("QSearchable List Demo");
+    resize(400, 350);
+
+    auto *mainLayout = new QVBoxLayout(this);
+
+    // Description label.
+    auto *description = new QLabel(
+        "Items in this list are indexed for your platform's search provider: "
+#ifdef Q_OS_MACOS
+        "Spotlight"
+#elif defined(Q_OS_WIN)
+        "Windows Search"
+#elif defined(Q_OS_LINUX)
+        "GNOME Shell / KRunner"
+#endif
+        ". Edit the list and they will appear in search results in real time."
+    );
+    description->setWordWrap(true);
+    mainLayout->addWidget(description);
+
+    m_rowsLayout = new QVBoxLayout;
+    mainLayout->addLayout(m_rowsLayout);
+
+    mainLayout->addStretch();
+
+    auto *bottomBar = new QHBoxLayout;
+    auto *addButton = new QPushButton("+");
+    m_statusLabel = new QLabel("Ready");
+    bottomBar->addWidget(addButton);
+    bottomBar->addWidget(m_statusLabel, 1);
+    mainLayout->addLayout(bottomBar);
+
+    connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); });
+
+    auto *index = QSearchableIndex::Get();
+    connect(index, &QSearchableIndex::indexingSucceeded,
+            this, &ListDemoWindow::onIndexingSucceeded);
+    connect(index, &QSearchableIndex::errorOccurred,
+            this, &ListDemoWindow::onErrorOccurred);
+    connect(index, &QSearchableIndex::activated,
+            this, &ListDemoWindow::onActivated);
+
+    // Pre-populate with sample items.
+    addItem("Alpaca");
+    addItem("Pangolin");
+    addItem("Axolotl");
+
+    indexAllItems();
+}
+
+void ListDemoWindow::addItem(const QString &text)
+{
+    int id = m_nextId++;
+
+    auto *row = new QHBoxLayout;
+    auto *lineEdit = new QLineEdit(text);
+    auto *removeButton = new QPushButton("-");
+
+    row->addWidget(lineEdit);
+    row->addWidget(removeButton);
+    m_rowsLayout->addLayout(row);
+
+    m_items.insert(id, lineEdit);
+
+    connect(lineEdit, &QLineEdit::editingFinished, this, [this, id]() {
+        onEditingFinished(id);
+    });
+
+    connect(lineEdit, &QLineEdit::textEdited, this, [this, lineEdit]() {
+        if (lineEdit == m_highlightedItem)
+            clearHighlight();
+    });
+
+    connect(removeButton, &QPushButton::clicked, this, [this, id, row]() {
+        removeItem(id);
+        // Clean up rows.
+        while (row->count() > 0) {
+            auto *item = row->takeAt(0);
+            delete item->widget();
+            delete item;
+        }
+        m_rowsLayout->removeItem(row);
+        delete row;
+    });
+}
+
+void ListDemoWindow::removeItem(int id)
+{
+    if (m_items.value(id) == m_highlightedItem)
+        clearHighlight();
+
+    m_items.remove(id);
+
+    QString identifier = QStringLiteral("test-") + QString::number(id);
+    QSearchableIndex::Get()->removeItems({identifier});
+    m_statusLabel->setText(QString("Removed item %1").arg(id));
+}
+
+void ListDemoWindow::onEditingFinished(int id)
+{
+    auto it = m_items.find(id);
+    if (it == m_items.end())
+        return;
+
+    indexItem(id, it.value()->text());
+}
+
+void ListDemoWindow::indexItem(int id, const QString &text)
+{
+    QSearchableItem item(QStringLiteral("test-") + QString::number(id));
+    item.setDomainIdentifier(QStringLiteral("testharness"));
+    item.setTitle(text);
+
+    QSearchableIndex::Get()->indexItems({item});
+}
+
+void ListDemoWindow::indexAllItems()
+{
+    QList<QSearchableItem> items;
+
+    for (auto it = m_items.constBegin(); it != m_items.constEnd(); ++it) {
+        QSearchableItem item(QStringLiteral("test-") + QString::number(it.key()));
+        item.setDomainIdentifier(QStringLiteral("testharness"));
+        item.setTitle(it.value()->text());
+        items.append(item);
+    }
+
+    if (!items.isEmpty()) {
+        QSearchableIndex::Get()->indexItems(items);
+    }
+}
+
+void ListDemoWindow::onIndexingSucceeded(int count)
+{
+    m_statusLabel->setText(QString("Indexed %1 item(s)").arg(count));
+}
+
+void ListDemoWindow::onErrorOccurred(const QString &errorMessage)
+{
+    m_statusLabel->setText(QString("Error: %1").arg(errorMessage));
+}
+
+void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
+{
+    if (!uniqueIdentifier.startsWith(QLatin1String("test-")))
+        return;
+
+    bool ok;
+    int id = uniqueIdentifier.mid(5).toInt(&ok);
+    if (!ok) {
+        return;
+    }
+
+    auto it = m_items.find(id);
+    if (it == m_items.end())
+        return;
+
+    clearHighlight();
+
+    QLineEdit *lineEdit = it.value();
+    lineEdit->setStyleSheet(QStringLiteral("QLineEdit { background-color: #FFEB3B; }"));
+    m_highlightedItem = lineEdit;
+
+    // Raise window.
+    raise();
+    activateWindow();
+
+    m_statusLabel->setText(QString("Activated: %1").arg(lineEdit->text()));
+}
+
+void ListDemoWindow::clearHighlight()
+{
+    if (m_highlightedItem) {
+        m_highlightedItem->setStyleSheet(QString());
+        m_highlightedItem = nullptr;
+    }
+}
