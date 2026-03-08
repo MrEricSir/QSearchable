@@ -29,13 +29,23 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
-      - name: Test
+      - name: Test (Unix)
+        if: runner.os != 'Windows'
         run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = "${{ env.QT_ROOT_DIR }}\bin;$env:PATH"
+          ctest --test-dir build --output-on-failure -C Release
 
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 

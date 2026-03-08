@@ -169,7 +169,11 @@ void KRunnerBackend::registerOnDBus()
 {
     QString busName = s_busName;
     if (busName.isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         QString desktopName = QCoreApplication::desktopFileName();
+#else
+        QString desktopName;
+#endif
         if (desktopName.isEmpty()) {
             QString appName = QCoreApplication::applicationName();
             if (appName.isEmpty())

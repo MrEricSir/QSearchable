@@ -187,8 +187,16 @@ void TestQSearchableIndex::removeItemsEmitsSucceeded()
 void TestQSearchableIndex::removeItemsInDomainsEmitsSucceeded()
 {
     QSearchableIndex *index = QSearchableIndex::Get();
-    QSignalSpy spy(index, &QSearchableIndex::removalSucceeded);
 
+    // First index an item with the domain so removal has something to work with
+    QSearchableItem item("domain-item-1");
+    item.setTitle("Domain Item");
+    item.setDomainIdentifier("domain-1");
+    QSignalSpy indexSpy(index, &QSearchableIndex::indexingSucceeded);
+    index->indexItems({item});
+    QVERIFY(indexSpy.wait(5000));
+
+    QSignalSpy spy(index, &QSearchableIndex::removalSucceeded);
     index->removeItemsInDomains({"domain-1"});
 
     QVERIFY(spy.wait(5000));
