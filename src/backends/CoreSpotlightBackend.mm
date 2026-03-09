@@ -133,10 +133,10 @@ void CoreSpotlightBackend::indexItems(const QList<QSearchableItem> &items)
         [csItems addObject:csItem];
     }
 
-    CSSearchableIndex *index = (CSSearchableIndex *)index;
+    CSSearchableIndex *csIndex = (CSSearchableIndex *)index;
     const int count = items.size();
 
-    [index indexSearchableItems:csItems
+    [csIndex indexSearchableItems:csItems
               completionHandler:^(NSError *error) {
                   if (error) {
                       QString errorMsg = QString::fromNSString(error.localizedDescription);
@@ -153,10 +153,10 @@ void CoreSpotlightBackend::indexItems(const QList<QSearchableItem> &items)
 
 void CoreSpotlightBackend::removeItems(const QStringList &identifiers)
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)index;
+    CSSearchableIndex *csIndex = (CSSearchableIndex *)index;
     NSArray<NSString *> *nsIdentifiers = toNSStringArray(identifiers);
 
-    [index deleteSearchableItemsWithIdentifiers:nsIdentifiers
+    [csIndex deleteSearchableItemsWithIdentifiers:nsIdentifiers
                               completionHandler:^(NSError *error) {
                                   if (error) {
                                       QString errorMsg = QString::fromNSString(error.localizedDescription);
@@ -173,10 +173,10 @@ void CoreSpotlightBackend::removeItems(const QStringList &identifiers)
 
 void CoreSpotlightBackend::removeItemsInDomains(const QStringList &domainIdentifiers)
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)index;
+    CSSearchableIndex *csIndex = (CSSearchableIndex *)index;
     NSArray<NSString *> *nsDomains = toNSStringArray(domainIdentifiers);
 
-    [index deleteSearchableItemsWithDomainIdentifiers:nsDomains
+    [csIndex deleteSearchableItemsWithDomainIdentifiers:nsDomains
                                     completionHandler:^(NSError *error) {
                                         if (error) {
                                             QString errorMsg = QString::fromNSString(error.localizedDescription);
@@ -193,9 +193,9 @@ void CoreSpotlightBackend::removeItemsInDomains(const QStringList &domainIdentif
 
 void CoreSpotlightBackend::removeAllItems()
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)index;
+    CSSearchableIndex *csIndex = (CSSearchableIndex *)index;
 
-    [index deleteAllSearchableItemsWithCompletionHandler:^(NSError *error) {
+    [csIndex deleteAllSearchableItemsWithCompletionHandler:^(NSError *error) {
         if (error) {
             QString errorMsg = QString::fromNSString(error.localizedDescription);
             QMetaObject::invokeMethod(this, [this, errorMsg]() {

@@ -87,14 +87,14 @@ GnomeSearchBackend::~GnomeSearchBackend()
     unregisterFromDBus();
 }
 
-void GnomeSearchBackend::setBusName(const QString &busName)
+void GnomeSearchBackend::setBusName(const QString &name)
 {
-    busName = busName;
+    busName = name;
 }
 
-void GnomeSearchBackend::setObjectPath(const QString &objectPath)
+void GnomeSearchBackend::setObjectPath(const QString &path)
 {
-    objectPath = objectPath;
+    objectPath = path;
 }
 
 bool GnomeSearchBackend::isSupported() const
@@ -188,8 +188,8 @@ void GnomeSearchBackend::launchSearch(const QStringList &terms, uint timestamp)
 
 void GnomeSearchBackend::registerOnDBus()
 {
-    QString busName = busName;
-    if (busName.isEmpty()) {
+    QString serviceName = busName;
+    if (serviceName.isEmpty()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         QString desktopName = QCoreApplication::desktopFileName();
 #else
@@ -199,12 +199,12 @@ void GnomeSearchBackend::registerOnDBus()
             QString appName = QCoreApplication::applicationName();
             if (appName.isEmpty())
                 appName = QStringLiteral("QSearchable");
-            busName = QStringLiteral("org.qsearchable.%1.SearchProvider").arg(appName);
+            serviceName = QStringLiteral("org.qsearchable.%1.SearchProvider").arg(appName);
         } else {
             // Strip .desktop suffix if present
             if (desktopName.endsWith(QStringLiteral(".desktop")))
                 desktopName.chop(8);
-            busName = desktopName + QStringLiteral(".SearchProvider");
+            serviceName = desktopName + QStringLiteral(".SearchProvider");
         }
     }
 
@@ -217,7 +217,7 @@ void GnomeSearchBackend::registerOnDBus()
     if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors))
         return;
 
-    if (!bus.registerService(busName))
+    if (!bus.registerService(serviceName))
         return;
 
     registered = true;

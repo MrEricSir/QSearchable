@@ -29,7 +29,7 @@ void SearchableItemStore::addItems(const QList<QSearchableItem> &items)
 
         // Remove old domain mapping if replacing an existing item
         auto existingIt = this->items.find(id);
-        if (existingIt != items.end()) {
+        if (existingIt != this->items.end()) {
             const QString &oldDomain = existingIt->domainIdentifier();
             if (!oldDomain.isEmpty()) {
                 domainToIds.remove(oldDomain, id);

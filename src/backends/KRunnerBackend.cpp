@@ -80,14 +80,14 @@ KRunnerBackend::~KRunnerBackend()
     unregisterFromDBus();
 }
 
-void KRunnerBackend::setBusName(const QString &busName)
+void KRunnerBackend::setBusName(const QString &name)
 {
-    busName = busName;
+    busName = name;
 }
 
-void KRunnerBackend::setObjectPath(const QString &objectPath)
+void KRunnerBackend::setObjectPath(const QString &path)
 {
-    objectPath = objectPath;
+    objectPath = path;
 }
 
 bool KRunnerBackend::isSupported() const
@@ -167,8 +167,8 @@ void KRunnerBackend::run(const QString &matchId, const QString &actionId)
 
 void KRunnerBackend::registerOnDBus()
 {
-    QString busName = busName;
-    if (busName.isEmpty()) {
+    QString serviceName = busName;
+    if (serviceName.isEmpty()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         QString desktopName = QCoreApplication::desktopFileName();
 #else
@@ -178,11 +178,11 @@ void KRunnerBackend::registerOnDBus()
             QString appName = QCoreApplication::applicationName();
             if (appName.isEmpty())
                 appName = QStringLiteral("QSearchable");
-            busName = QStringLiteral("org.qsearchable.%1.KRunner").arg(appName);
+            serviceName = QStringLiteral("org.qsearchable.%1.KRunner").arg(appName);
         } else {
             if (desktopName.endsWith(QStringLiteral(".desktop")))
                 desktopName.chop(8);
-            busName = desktopName + QStringLiteral(".KRunner");
+            serviceName = desktopName + QStringLiteral(".KRunner");
         }
     }
 
@@ -195,7 +195,7 @@ void KRunnerBackend::registerOnDBus()
     if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors))
         return;
 
-    if (!bus.registerService(busName))
+    if (!bus.registerService(serviceName))
         return;
 
     registered = true;
