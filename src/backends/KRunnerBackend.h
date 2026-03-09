@@ -110,11 +110,11 @@ private:
     void unregisterFromDBus();
     double computeRelevance(const QSearchableItem &item, const QString &query) const;
 
-    SearchableItemStore m_store;
-    bool m_registered;
+    SearchableItemStore store;
+    bool registered;
 
-    static QString s_busName;
-    static QString s_objectPath;
+    static QString busName;
+    static QString objectPath;
 };
 
 #endif // KRUNNERBACKEND_H

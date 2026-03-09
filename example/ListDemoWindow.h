@@ -28,11 +28,11 @@ private:
     void indexAllItems();
     void clearHighlight();
 
-    QVBoxLayout *m_rowsLayout;
-    QLabel *m_statusLabel;
-    QMap<int, QLineEdit *> m_items;
-    QLineEdit *m_highlightedItem = nullptr;
-    int m_nextId = 0;
+    QVBoxLayout *rowLayout;
+    QLabel *statusLabel;
+    QMap<int, QLineEdit *> items;
+    QLineEdit *highlightedItem = nullptr;
+    int nextId = 0;
 };
 
 #endif // LISTDEMOWINDOW_H

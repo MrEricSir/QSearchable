@@ -41,7 +41,7 @@ elseif(WIN32)
         src/backends/WindowsSearchBackend.cpp
         src/backends/WindowsSearchBackend.h
     )
-    target_link_libraries(QSearchable PRIVATE shell32)
+    target_link_libraries(QSearchable PRIVATE shell32 ole32 uuid)
 elseif(UNIX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     target_sources(QSearchable PRIVATE

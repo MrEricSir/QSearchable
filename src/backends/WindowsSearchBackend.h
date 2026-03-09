@@ -42,12 +42,13 @@ public:
     void removeAllItems() override;
 
 private:
-    QString baseDir() const;
     QString domainDir(const QString &domainIdentifier) const;
-    QString urlFilePath(const QString &domainIdentifier, const QString &uniqueId) const;
+    QString linkFilePath(const QString &domainIdentifier, const QString &uniqueId) const;
+    bool createShellLink(const QString &filePath, const QString &url, const QString &description);
     void notifyShell(const QString &path);
 
-    QString m_baseDir;
+    QString baseDir;
+    QString urlScheme;
 };
 
 #endif // WINDOWSSEARCHBACKEND_H

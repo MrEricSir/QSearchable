@@ -32,16 +32,16 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
     description->setWordWrap(true);
     mainLayout->addWidget(description);
 
-    m_rowsLayout = new QVBoxLayout;
-    mainLayout->addLayout(m_rowsLayout);
+    rowLayout = new QVBoxLayout;
+    mainLayout->addLayout(rowLayout);
 
     mainLayout->addStretch();
 
     auto *bottomBar = new QHBoxLayout;
     auto *addButton = new QPushButton("+");
-    m_statusLabel = new QLabel("Ready");
+    statusLabel = new QLabel("Ready");
     bottomBar->addWidget(addButton);
-    bottomBar->addWidget(m_statusLabel, 1);
+    bottomBar->addWidget(statusLabel, 1);
     mainLayout->addLayout(bottomBar);
 
     connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); });
@@ -64,7 +64,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
 void ListDemoWindow::addItem(const QString &text)
 {
-    int id = m_nextId++;
+    int id = nextId++;
 
     auto *row = new QHBoxLayout;
     auto *lineEdit = new QLineEdit(text);
@@ -72,16 +72,16 @@ void ListDemoWindow::addItem(const QString &text)
 
     row->addWidget(lineEdit);
     row->addWidget(removeButton);
-    m_rowsLayout->addLayout(row);
+    rowLayout->addLayout(row);
 
-    m_items.insert(id, lineEdit);
+    items.insert(id, lineEdit);
 
     connect(lineEdit, &QLineEdit::editingFinished, this, [this, id]() {
         onEditingFinished(id);
     });
 
     connect(lineEdit, &QLineEdit::textEdited, this, [this, lineEdit]() {
-        if (lineEdit == m_highlightedItem)
+        if (lineEdit == highlightedItem)
             clearHighlight();
     });
 
@@ -93,27 +93,27 @@ void ListDemoWindow::addItem(const QString &text)
             delete item->widget();
             delete item;
         }
-        m_rowsLayout->removeItem(row);
+        rowLayout->removeItem(row);
         delete row;
     });
 }
 
 void ListDemoWindow::removeItem(int id)
 {
-    if (m_items.value(id) == m_highlightedItem)
+    if (items.value(id) == highlightedItem)
         clearHighlight();
 
-    m_items.remove(id);
+    items.remove(id);
 
     QString identifier = QStringLiteral("test-") + QString::number(id);
     QSearchableIndex::Get()->removeItems({identifier});
-    m_statusLabel->setText(QString("Removed item %1").arg(id));
+    statusLabel->setText(QString("Removed item %1").arg(id));
 }
 
 void ListDemoWindow::onEditingFinished(int id)
 {
-    auto it = m_items.find(id);
-    if (it == m_items.end())
+    auto it = items.find(id);
+    if (it == items.end())
         return;
 
     indexItem(id, it.value()->text());
@@ -132,7 +132,7 @@ void ListDemoWindow::indexAllItems()
 {
     QList<QSearchableItem> items;
 
-    for (auto it = m_items.constBegin(); it != m_items.constEnd(); ++it) {
+    for (auto it = items.constBegin(); it != items.constEnd(); ++it) {
         QSearchableItem item(QStringLiteral("test-") + QString::number(it.key()));
         item.setDomainIdentifier(QStringLiteral("testharness"));
         item.setTitle(it.value()->text());
@@ -146,12 +146,12 @@ void ListDemoWindow::indexAllItems()
 
 void ListDemoWindow::onIndexingSucceeded(int count)
 {
-    m_statusLabel->setText(QString("Indexed %1 item(s)").arg(count));
+    statusLabel->setText(QString("Indexed %1 item(s)").arg(count));
 }
 
 void ListDemoWindow::onErrorOccurred(const QString &errorMessage)
 {
-    m_statusLabel->setText(QString("Error: %1").arg(errorMessage));
+    statusLabel->setText(QString("Error: %1").arg(errorMessage));
 }
 
 void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
@@ -165,27 +165,27 @@ void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
         return;
     }
 
-    auto it = m_items.find(id);
-    if (it == m_items.end())
+    auto it = items.find(id);
+    if (it == items.end())
         return;
 
     clearHighlight();
 
     QLineEdit *lineEdit = it.value();
     lineEdit->setStyleSheet(QStringLiteral("QLineEdit { background-color: #FFEB3B; }"));
-    m_highlightedItem = lineEdit;
+    highlightedItem = lineEdit;
 
     // Raise window.
     raise();
     activateWindow();
 
-    m_statusLabel->setText(QString("Activated: %1").arg(lineEdit->text()));
+    statusLabel->setText(QString("Activated: %1").arg(lineEdit->text()));
 }
 
 void ListDemoWindow::clearHighlight()
 {
-    if (m_highlightedItem) {
-        m_highlightedItem->setStyleSheet(QString());
-        m_highlightedItem = nullptr;
+    if (highlightedItem) {
+        highlightedItem->setStyleSheet(QString());
+        highlightedItem = nullptr;
     }
 }

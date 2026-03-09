@@ -41,8 +41,8 @@ public:
     void removeAllItems() override;
 
 private:
-    void *m_index; // CSSearchableIndex*
-    void *m_observer; // id (NSObject observer token)
+    void *index; // CSSearchableIndex*
+    void *observer; // id (NSObject observer token)
 };
 
 #endif // CORESPOTLIGHTBACKEND_H

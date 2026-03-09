@@ -28,18 +28,18 @@ void SearchableItemStore::addItems(const QList<QSearchableItem> &items)
         const QString &id = item.uniqueIdentifier();
 
         // Remove old domain mapping if replacing an existing item
-        auto existingIt = m_items.find(id);
-        if (existingIt != m_items.end()) {
+        auto existingIt = items.find(id);
+        if (existingIt != items.end()) {
             const QString &oldDomain = existingIt->domainIdentifier();
             if (!oldDomain.isEmpty()) {
-                m_domainToIds.remove(oldDomain, id);
+                domainToIds.remove(oldDomain, id);
             }
         }
 
-        m_items.insert(id, item);
+        items.insert(id, item);
 
         if (!item.domainIdentifier().isEmpty()) {
-            m_domainToIds.insert(item.domainIdentifier(), id);
+            domainToIds.insert(item.domainIdentifier(), id);
         }
     }
 }
@@ -47,13 +47,13 @@ void SearchableItemStore::addItems(const QList<QSearchableItem> &items)
 void SearchableItemStore::removeItems(const QStringList &identifiers)
 {
     for (const QString &id : identifiers) {
-        auto it = m_items.find(id);
-        if (it != m_items.end()) {
+        auto it = items.find(id);
+        if (it != items.end()) {
             const QString &domain = it->domainIdentifier();
             if (!domain.isEmpty()) {
-                m_domainToIds.remove(domain, id);
+                domainToIds.remove(domain, id);
             }
-            m_items.erase(it);
+            items.erase(it);
         }
     }
 }
@@ -61,18 +61,18 @@ void SearchableItemStore::removeItems(const QStringList &identifiers)
 void SearchableItemStore::removeItemsInDomains(const QStringList &domainIdentifiers)
 {
     for (const QString &domain : domainIdentifiers) {
-        const QList<QString> ids = m_domainToIds.values(domain);
+        const QList<QString> ids = domainToIds.values(domain);
         for (const QString &id : ids) {
-            m_items.remove(id);
+            items.remove(id);
         }
-        m_domainToIds.remove(domain);
+        domainToIds.remove(domain);
     }
 }
 
 void SearchableItemStore::removeAllItems()
 {
-    m_items.clear();
-    m_domainToIds.clear();
+    items.clear();
+    domainToIds.clear();
 }
 
 QList<QSearchableItem> SearchableItemStore::search(const QStringList &terms) const
@@ -81,7 +81,7 @@ QList<QSearchableItem> SearchableItemStore::search(const QStringList &terms) con
         return {};
 
     QList<QSearchableItem> results;
-    for (auto it = m_items.constBegin(); it != m_items.constEnd(); ++it) {
+    for (auto it = items.constBegin(); it != items.constEnd(); ++it) {
         if (matchesTerms(it.value(), terms))
             results.append(it.value());
     }
@@ -90,14 +90,14 @@ QList<QSearchableItem> SearchableItemStore::search(const QStringList &terms) con
 
 QSearchableItem SearchableItemStore::item(const QString &identifier) const
 {
-    auto it = m_items.find(identifier);
-    Q_ASSERT(it != m_items.end());
+    auto it = items.find(identifier);
+    Q_ASSERT(it != items.end());
     return it.value();
 }
 
 bool SearchableItemStore::contains(const QString &identifier) const
 {
-    return m_items.contains(identifier);
+    return items.contains(identifier);
 }
 
 bool SearchableItemStore::matchesTerms(const QSearchableItem &item, const QStringList &terms) const

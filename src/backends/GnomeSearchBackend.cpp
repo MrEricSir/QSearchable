@@ -29,8 +29,8 @@
 #include <QTimer>
 #include <QVariantMap>
 
-QString GnomeSearchBackend::s_busName;
-QString GnomeSearchBackend::s_objectPath = QStringLiteral("/SearchProvider");
+QString GnomeSearchBackend::busName;
+QString GnomeSearchBackend::objectPath = QStringLiteral("/SearchProvider");
 
 // D-Bus adaptor that exposes the org.gnome.Shell.SearchProvider2 interface
 class SearchProvider2Adaptor : public QObject
@@ -77,7 +77,7 @@ private:
 
 GnomeSearchBackend::GnomeSearchBackend(QObject *parent)
     : QSearchableIndexBackend(parent)
-    , m_registered(false)
+    , registered(false)
 {
     registerOnDBus();
 }
@@ -89,22 +89,22 @@ GnomeSearchBackend::~GnomeSearchBackend()
 
 void GnomeSearchBackend::setBusName(const QString &busName)
 {
-    s_busName = busName;
+    busName = busName;
 }
 
 void GnomeSearchBackend::setObjectPath(const QString &objectPath)
 {
-    s_objectPath = objectPath;
+    objectPath = objectPath;
 }
 
 bool GnomeSearchBackend::isSupported() const
 {
-    return m_registered;
+    return registered;
 }
 
 void GnomeSearchBackend::indexItems(const QList<QSearchableItem> &items)
 {
-    m_store.addItems(items);
+    store.addItems(items);
 
     const int count = items.size();
     QTimer::singleShot(0, this, [this, count]() {
@@ -114,7 +114,7 @@ void GnomeSearchBackend::indexItems(const QList<QSearchableItem> &items)
 
 void GnomeSearchBackend::removeItems(const QStringList &identifiers)
 {
-    m_store.removeItems(identifiers);
+    store.removeItems(identifiers);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -123,7 +123,7 @@ void GnomeSearchBackend::removeItems(const QStringList &identifiers)
 
 void GnomeSearchBackend::removeItemsInDomains(const QStringList &domainIdentifiers)
 {
-    m_store.removeItemsInDomains(domainIdentifiers);
+    store.removeItemsInDomains(domainIdentifiers);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -132,7 +132,7 @@ void GnomeSearchBackend::removeItemsInDomains(const QStringList &domainIdentifie
 
 void GnomeSearchBackend::removeAllItems()
 {
-    m_store.removeAllItems();
+    store.removeAllItems();
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -142,7 +142,7 @@ void GnomeSearchBackend::removeAllItems()
 QStringList GnomeSearchBackend::getInitialResultSet(const QStringList &terms)
 {
     QStringList results;
-    const QList<QSearchableItem> items = m_store.search(terms);
+    const QList<QSearchableItem> items = store.search(terms);
     for (const QSearchableItem &item : items)
         results.append(item.uniqueIdentifier());
     return results;
@@ -159,10 +159,10 @@ QList<QVariantMap> GnomeSearchBackend::getResultMetas(const QStringList &identif
 {
     QList<QVariantMap> metas;
     for (const QString &id : identifiers) {
-        if (!m_store.contains(id))
+        if (!store.contains(id))
             continue;
 
-        const QSearchableItem item = m_store.item(id);
+        const QSearchableItem item = store.item(id);
         QVariantMap meta;
         meta[QStringLiteral("id")] = id;
         meta[QStringLiteral("name")] = item.title().isEmpty() ? item.displayName() : item.title();
@@ -188,7 +188,7 @@ void GnomeSearchBackend::launchSearch(const QStringList &terms, uint timestamp)
 
 void GnomeSearchBackend::registerOnDBus()
 {
-    QString busName = s_busName;
+    QString busName = busName;
     if (busName.isEmpty()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         QString desktopName = QCoreApplication::desktopFileName();
@@ -214,23 +214,23 @@ void GnomeSearchBackend::registerOnDBus()
 
     new SearchProvider2Adaptor(this);
 
-    if (!bus.registerObject(s_objectPath, this, QDBusConnection::ExportAdaptors))
+    if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors))
         return;
 
     if (!bus.registerService(busName))
         return;
 
-    m_registered = true;
+    registered = true;
 }
 
 void GnomeSearchBackend::unregisterFromDBus()
 {
-    if (!m_registered)
+    if (!registered)
         return;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
-    bus.unregisterObject(s_objectPath);
-    m_registered = false;
+    bus.unregisterObject(objectPath);
+    registered = false;
 }
 
 #include "GnomeSearchBackend.moc"

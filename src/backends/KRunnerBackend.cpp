@@ -27,8 +27,8 @@
 #include <QDBusMetaType>
 #include <QTimer>
 
-QString KRunnerBackend::s_busName;
-QString KRunnerBackend::s_objectPath = QStringLiteral("/KRunner");
+QString KRunnerBackend::busName;
+QString KRunnerBackend::objectPath = QStringLiteral("/KRunner");
 
 // D-Bus adaptor that exposes the org.kde.krunner1 interface
 class KRunner1Adaptor : public QObject
@@ -65,7 +65,7 @@ private:
 
 KRunnerBackend::KRunnerBackend(QObject *parent)
     : QSearchableIndexBackend(parent)
-    , m_registered(false)
+    , registered(false)
 {
     qDBusRegisterMetaType<KRunnerMatch>();
     qDBusRegisterMetaType<QList<KRunnerMatch>>();
@@ -82,22 +82,22 @@ KRunnerBackend::~KRunnerBackend()
 
 void KRunnerBackend::setBusName(const QString &busName)
 {
-    s_busName = busName;
+    busName = busName;
 }
 
 void KRunnerBackend::setObjectPath(const QString &objectPath)
 {
-    s_objectPath = objectPath;
+    objectPath = objectPath;
 }
 
 bool KRunnerBackend::isSupported() const
 {
-    return m_registered;
+    return registered;
 }
 
 void KRunnerBackend::indexItems(const QList<QSearchableItem> &items)
 {
-    m_store.addItems(items);
+    store.addItems(items);
 
     const int count = items.size();
     QTimer::singleShot(0, this, [this, count]() {
@@ -107,7 +107,7 @@ void KRunnerBackend::indexItems(const QList<QSearchableItem> &items)
 
 void KRunnerBackend::removeItems(const QStringList &identifiers)
 {
-    m_store.removeItems(identifiers);
+    store.removeItems(identifiers);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -116,7 +116,7 @@ void KRunnerBackend::removeItems(const QStringList &identifiers)
 
 void KRunnerBackend::removeItemsInDomains(const QStringList &domainIdentifiers)
 {
-    m_store.removeItemsInDomains(domainIdentifiers);
+    store.removeItemsInDomains(domainIdentifiers);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -125,7 +125,7 @@ void KRunnerBackend::removeItemsInDomains(const QStringList &domainIdentifiers)
 
 void KRunnerBackend::removeAllItems()
 {
-    m_store.removeAllItems();
+    store.removeAllItems();
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -140,7 +140,7 @@ QList<KRunnerAction> KRunnerBackend::actions()
 QList<KRunnerMatch> KRunnerBackend::match(const QString &query)
 {
     QStringList terms = query.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-    const QList<QSearchableItem> items = m_store.search(terms);
+    const QList<QSearchableItem> items = store.search(terms);
 
     QList<KRunnerMatch> matches;
     for (const QSearchableItem &item : items) {
@@ -167,7 +167,7 @@ void KRunnerBackend::run(const QString &matchId, const QString &actionId)
 
 void KRunnerBackend::registerOnDBus()
 {
-    QString busName = s_busName;
+    QString busName = busName;
     if (busName.isEmpty()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         QString desktopName = QCoreApplication::desktopFileName();
@@ -192,23 +192,23 @@ void KRunnerBackend::registerOnDBus()
 
     new KRunner1Adaptor(this);
 
-    if (!bus.registerObject(s_objectPath, this, QDBusConnection::ExportAdaptors))
+    if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors))
         return;
 
     if (!bus.registerService(busName))
         return;
 
-    m_registered = true;
+    registered = true;
 }
 
 void KRunnerBackend::unregisterFromDBus()
 {
-    if (!m_registered)
+    if (!registered)
         return;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
-    bus.unregisterObject(s_objectPath);
-    m_registered = false;
+    bus.unregisterObject(objectPath);
+    registered = false;
 }
 
 double KRunnerBackend::computeRelevance(const QSearchableItem &item, const QString &query) const

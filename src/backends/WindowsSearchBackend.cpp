@@ -26,11 +26,13 @@
 #include <QDir>
 #include <QFile>
 #include <QStandardPaths>
-#include <QTextStream>
 #include <QTimer>
 
 #ifdef Q_OS_WIN
 #include <ShlObj.h>
+#include <ShObjIdl.h>
+#include <comdef.h>
+#include <objbase.h>
 #endif
 
 WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
@@ -38,9 +40,12 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
 {
     QString localAppData = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
     QString appName = QCoreApplication::applicationName();
-    if (appName.isEmpty())
+    if (appName.isEmpty()) {
         appName = QStringLiteral("QSearchable");
-    m_baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
+    }
+
+    baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
+    urlScheme = QStringLiteral("qsearchable-") + appName.toLower() + QStringLiteral("://");
 }
 
 bool WindowsSearchBackend::isSupported() const
@@ -50,28 +55,22 @@ bool WindowsSearchBackend::isSupported() const
 
 void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 {
-    QDir().mkpath(m_baseDir);
+    QDir().mkpath(baseDir);
 
     int indexed = 0;
     for (const QSearchableItem &item : items) {
         QString domain = item.domainIdentifier();
-        if (domain.isEmpty())
+        if (domain.isEmpty()) {
             domain = QStringLiteral("default");
+        }
 
         QString dir = domainDir(domain);
         QDir().mkpath(dir);
 
-        QString filePath = urlFilePath(domain, item.uniqueIdentifier());
-        QFile file(filePath);
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QTextStream stream(&file);
-            stream << QStringLiteral("[InternetShortcut]\n");
-            stream << QStringLiteral("URL=qsearchable://") << item.uniqueIdentifier() << QStringLiteral("\n");
-            if (!item.title().isEmpty())
-                stream << QStringLiteral("; Title: ") << item.title() << QStringLiteral("\n");
-            if (!item.contentDescription().isEmpty())
-                stream << QStringLiteral("; Description: ") << item.contentDescription() << QStringLiteral("\n");
-            file.close();
+        QString filePath = linkFilePath(domain, item.uniqueIdentifier());
+        QString url = urlScheme + item.uniqueIdentifier();
+
+        if (createShellLink(filePath, url, item.title())) {
             notifyShell(filePath);
             ++indexed;
         }
@@ -86,11 +85,11 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 void WindowsSearchBackend::removeItems(const QStringList &identifiers)
 {
     // Search all domain subdirectories for matching files
-    QDir base(m_baseDir);
+    QDir base(baseDir);
     const QStringList domains = base.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
     for (const QString &domain : domains) {
         for (const QString &id : identifiers) {
-            QString filePath = urlFilePath(domain, id);
+            QString filePath = linkFilePath(domain, id);
             if (QFile::exists(filePath)) {
                 QFile::remove(filePath);
                 notifyShell(filePath);
@@ -121,10 +120,10 @@ void WindowsSearchBackend::removeItemsInDomains(const QStringList &domainIdentif
 
 void WindowsSearchBackend::removeAllItems()
 {
-    QDir base(m_baseDir);
+    QDir base(baseDir);
     if (base.exists()) {
         base.removeRecursively();
-        notifyShell(m_baseDir);
+        notifyShell(baseDir);
     }
 
     QTimer::singleShot(0, this, [this]() {
@@ -132,19 +131,51 @@ void WindowsSearchBackend::removeAllItems()
     });
 }
 
-QString WindowsSearchBackend::baseDir() const
-{
-    return m_baseDir;
-}
-
 QString WindowsSearchBackend::domainDir(const QString &domainIdentifier) const
 {
-    return m_baseDir + QLatin1Char('/') + domainIdentifier;
+    return baseDir + QLatin1Char('/') + domainIdentifier;
 }
 
-QString WindowsSearchBackend::urlFilePath(const QString &domainIdentifier, const QString &uniqueId) const
+QString WindowsSearchBackend::linkFilePath(const QString &domainIdentifier, const QString &uniqueId) const
 {
-    return domainDir(domainIdentifier) + QLatin1Char('/') + uniqueId + QStringLiteral(".url");
+    return domainDir(domainIdentifier) + QLatin1Char('/') + uniqueId + QStringLiteral(".lnk");
+}
+
+bool WindowsSearchBackend::createShellLink(const QString &filePath, const QString &url, const QString &description)
+{
+#ifdef Q_OS_WIN
+    IShellLinkW *shellLink = nullptr;
+    HRESULT hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                                  IID_IShellLinkW, reinterpret_cast<void **>(&shellLink));
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    // Set the URL as the target path argument so the default browser opens it.
+    shellLink->SetPath(L"cmd.exe");
+    shellLink->SetArguments(reinterpret_cast<const wchar_t *>(
+        (QStringLiteral("/c start \"\" \"") + url + QStringLiteral("\"")).utf16()));
+    shellLink->SetShowCmd(SW_HIDE);
+
+    if (!description.isEmpty()) {
+        shellLink->SetDescription(reinterpret_cast<const wchar_t *>(description.utf16()));
+    }
+
+    IPersistFile *persistFile = nullptr;
+    hr = shellLink->QueryInterface(IID_IPersistFile, reinterpret_cast<void **>(&persistFile));
+    if (SUCCEEDED(hr)) {
+        hr = persistFile->Save(reinterpret_cast<const wchar_t *>(filePath.utf16()), TRUE);
+        persistFile->Release();
+    }
+
+    shellLink->Release();
+    return SUCCEEDED(hr);
+#else
+    Q_UNUSED(filePath);
+    Q_UNUSED(url);
+    Q_UNUSED(description);
+    return false;
+#endif
 }
 
 void WindowsSearchBackend::notifyShell(const QString &path)

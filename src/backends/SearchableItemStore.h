@@ -46,8 +46,8 @@ public:
 private:
     bool matchesTerms(const QSearchableItem &item, const QStringList &terms) const;
 
-    QMap<QString, QSearchableItem> m_items;
-    QMultiMap<QString, QString> m_domainToIds;
+    QMap<QString, QSearchableItem> items;
+    QMultiMap<QString, QString> domainToIds;
 };
 
 #endif // SEARCHABLEITEMSTORE_H

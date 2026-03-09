@@ -42,13 +42,13 @@ static NSArray<NSString *> *toNSStringArray(const QStringList &list)
 
 CoreSpotlightBackend::CoreSpotlightBackend(QObject *parent)
     : QSearchableIndexBackend(parent)
-    , m_index(nullptr)
-    , m_observer(nullptr)
+    , index(nullptr)
+    , observer(nullptr)
 {
-    m_index = (void *)[[CSSearchableIndex defaultSearchableIndex] retain];
+    index = (void *)[[CSSearchableIndex defaultSearchableIndex] retain];
 
     // Observe search result activation via NSUserActivity
-    m_observer = (void *)[[NSNotificationCenter defaultCenter]
+    observer = (void *)[[NSNotificationCenter defaultCenter]
         addObserverForName:CSSearchableItemActionType
                     object:nil
                      queue:[NSOperationQueue mainQueue]
@@ -68,13 +68,13 @@ CoreSpotlightBackend::CoreSpotlightBackend(QObject *parent)
 
 CoreSpotlightBackend::~CoreSpotlightBackend()
 {
-    if (m_observer) {
-        [[NSNotificationCenter defaultCenter] removeObserver:(id)m_observer];
-        m_observer = nullptr;
+    if (observer) {
+        [[NSNotificationCenter defaultCenter] removeObserver:(id)observer];
+        observer = nullptr;
     }
-    if (m_index) {
-        [(id)m_index release];
-        m_index = nullptr;
+    if (index) {
+        [(id)index release];
+        index = nullptr;
     }
 }
 
@@ -133,7 +133,7 @@ void CoreSpotlightBackend::indexItems(const QList<QSearchableItem> &items)
         [csItems addObject:csItem];
     }
 
-    CSSearchableIndex *index = (CSSearchableIndex *)m_index;
+    CSSearchableIndex *index = (CSSearchableIndex *)index;
     const int count = items.size();
 
     [index indexSearchableItems:csItems
@@ -153,7 +153,7 @@ void CoreSpotlightBackend::indexItems(const QList<QSearchableItem> &items)
 
 void CoreSpotlightBackend::removeItems(const QStringList &identifiers)
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)m_index;
+    CSSearchableIndex *index = (CSSearchableIndex *)index;
     NSArray<NSString *> *nsIdentifiers = toNSStringArray(identifiers);
 
     [index deleteSearchableItemsWithIdentifiers:nsIdentifiers
@@ -173,7 +173,7 @@ void CoreSpotlightBackend::removeItems(const QStringList &identifiers)
 
 void CoreSpotlightBackend::removeItemsInDomains(const QStringList &domainIdentifiers)
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)m_index;
+    CSSearchableIndex *index = (CSSearchableIndex *)index;
     NSArray<NSString *> *nsDomains = toNSStringArray(domainIdentifiers);
 
     [index deleteSearchableItemsWithDomainIdentifiers:nsDomains
@@ -193,7 +193,7 @@ void CoreSpotlightBackend::removeItemsInDomains(const QStringList &domainIdentif
 
 void CoreSpotlightBackend::removeAllItems()
 {
-    CSSearchableIndex *index = (CSSearchableIndex *)m_index;
+    CSSearchableIndex *index = (CSSearchableIndex *)index;
 
     [index deleteAllSearchableItemsWithCompletionHandler:^(NSError *error) {
         if (error) {

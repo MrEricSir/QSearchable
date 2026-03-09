@@ -57,11 +57,11 @@ private:
     void registerOnDBus();
     void unregisterFromDBus();
 
-    SearchableItemStore m_store;
-    bool m_registered;
+    SearchableItemStore store;
+    bool registered;
 
-    static QString s_busName;
-    static QString s_objectPath;
+    static QString busName;
+    static QString objectPath;
 };
 
 #endif // GNOMESEARCHBACKEND_H
