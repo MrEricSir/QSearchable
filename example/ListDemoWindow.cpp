@@ -132,7 +132,7 @@ void ListDemoWindow::indexAllItems()
 {
     QList<QSearchableItem> items;
 
-    for (auto it = items.constBegin(); it != items.constEnd(); ++it) {
+    for (auto it = this->items.constBegin(); it != this->items.constEnd(); ++it) {
         QSearchableItem item(QStringLiteral("test-") + QString::number(it.key()));
         item.setDomainIdentifier(QStringLiteral("testharness"));
         item.setTitle(it.value()->text());
