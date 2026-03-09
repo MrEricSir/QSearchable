@@ -6,6 +6,8 @@ Integrates desktop search (Spotlight, Windows Search, etc.) into your Qt applica
 
 For full details see [the documentation.](https://mrericsir.github.io/QSearchable/qsearchable-module.html)
 
+This library was originally developed for the [Fang newsreader](https://github.com/MrEricSir/Fang).
+
 ## Quick Start
 
 ```cpp
