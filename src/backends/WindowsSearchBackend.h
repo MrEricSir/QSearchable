@@ -33,6 +33,7 @@ class WindowsSearchBackend : public QSearchableIndexBackend
 
 public:
     explicit WindowsSearchBackend(QObject *parent = nullptr);
+    ~WindowsSearchBackend() override;
 
     bool isSupported() const override;
 

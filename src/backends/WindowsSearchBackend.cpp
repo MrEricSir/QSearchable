@@ -38,6 +38,10 @@
 WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
     : QSearchableIndexBackend(parent)
 {
+#ifdef Q_OS_WIN
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+#endif
+
     QString localAppData = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
     QString appName = QCoreApplication::applicationName();
     if (appName.isEmpty()) {
@@ -46,6 +50,13 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
 
     baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
     urlScheme = QStringLiteral("qsearchable-") + appName.toLower() + QStringLiteral("://");
+}
+
+WindowsSearchBackend::~WindowsSearchBackend()
+{
+#ifdef Q_OS_WIN
+    CoUninitialize();
+#endif
 }
 
 bool WindowsSearchBackend::isSupported() const
