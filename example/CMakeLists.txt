@@ -10,6 +10,7 @@ qt_add_executable(QSearchableListDemo
 
 set_target_properties(QSearchableListDemo PROPERTIES
     MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
 )
 
 target_link_libraries(QSearchableListDemo PRIVATE

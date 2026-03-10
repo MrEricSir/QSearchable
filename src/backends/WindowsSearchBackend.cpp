@@ -25,6 +25,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
+#include <QLibraryInfo>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
@@ -80,6 +82,12 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 {
     QDir().mkpath(baseDir);
 
+    if (!scopeRegistered && !items.isEmpty()) {
+        registerCrawlScope();
+        registerFileType();
+        scopeRegistered = true;
+    }
+
     int indexed = 0;
     for (const QSearchableItem &item : items) {
         QString domain = item.domainIdentifier();
@@ -99,12 +107,6 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
         QString filePath = itemFilePath(domain, item);
         writeItemFile(filePath, item);
         ++indexed;
-    }
-
-    if (!scopeRegistered && !items.isEmpty()) {
-        registerCrawlScope();
-        registerFileType();
-        scopeRegistered = true;
     }
 
     if (indexed > 0) {
@@ -315,17 +317,28 @@ void WindowsSearchBackend::unregisterCrawlScope()
     scopeManager->Release();
 }
 
-// --- File type association ---
-
 void WindowsSearchBackend::registerFileType()
 {
+    QString appPath = QCoreApplication::applicationFilePath();
+    QString appFileName = QFileInfo(appPath).fileName();
+
+    // Register with App Paths. Technically will work without this, but
+    // only if installed.
+    QString appPathsKey = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
+                          + appFileName;
+    QSettings appPathsSettings(appPathsKey, QSettings::NativeFormat);
+    appPathsSettings.setValue(QStringLiteral("."), QDir::toNativeSeparators(appPath));
+    appPathsSettings.setValue(QStringLiteral("Path"),
+                              QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
+
+    // Register file extension -> progId
     QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
     QSettings extSettings(extKey, QSettings::NativeFormat);
     extSettings.setValue(QStringLiteral("."), progId);
 
+    // Register progId -> shell open command
     QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
     QSettings progSettings(progKey, QSettings::NativeFormat);
-    QString appPath = QCoreApplication::applicationFilePath();
     progSettings.setValue(QStringLiteral("shell/open/command/."),
                           QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
                               + QStringLiteral("\" \"%1\""));
@@ -333,6 +346,12 @@ void WindowsSearchBackend::registerFileType()
 
 void WindowsSearchBackend::unregisterFileType()
 {
+    QString appFileName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
+    QString appPathsKey = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
+                          + appFileName;
+    QSettings appPathsSettings(appPathsKey, QSettings::NativeFormat);
+    appPathsSettings.clear();
+
     QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
     QSettings extSettings(extKey, QSettings::NativeFormat);
     extSettings.clear();
