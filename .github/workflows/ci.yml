@@ -37,16 +37,19 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Continue'
           $env:PATH = "${{ env.QT_ROOT_DIR }}\bin;$env:PATH"
-          $testExe = Get-ChildItem -Path build -Recurse -Filter "tst_qsearchableindex.exe" | Select-Object -First 1
-          Write-Host "Test executable: $($testExe.FullName)"
-          $proc = Start-Process -FilePath $testExe.FullName -ArgumentList "-v2" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "test_stdout.txt" -RedirectStandardError "test_stderr.txt"
-          Write-Host "Exit code: $($proc.ExitCode)"
-          Write-Host "--- STDOUT ---"
-          Get-Content "test_stdout.txt" -ErrorAction SilentlyContinue
-          Write-Host "--- STDERR ---"
-          Get-Content "test_stderr.txt" -ErrorAction SilentlyContinue
-          exit $proc.ExitCode
+          Write-Host "Running test..."
+          & build\tests\Release\tst_qsearchableindex.exe -v2 -o test_output.txt,txt
+          $testExit = $LASTEXITCODE
+          Write-Host "Test exited with code: $testExit"
+          if (Test-Path test_output.txt) {
+            Write-Host "--- Test Output ---"
+            Get-Content test_output.txt
+          } else {
+            Write-Host "No test output file was created"
+          }
+          exit $testExit
 
   docs:
     name: Documentation
