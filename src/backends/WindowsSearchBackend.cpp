@@ -25,22 +25,19 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTimer>
 
-#ifdef Q_OS_WIN
 #include <ShlObj.h>
-#include <ShObjIdl.h>
-#include <comdef.h>
 #include <objbase.h>
-#endif
+#include <searchapi.h>
 
 WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
     : QSearchableIndexBackend(parent)
 {
-#ifdef Q_OS_WIN
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-#endif
 
     QString localAppData = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
     QString appName = QCoreApplication::applicationName();
@@ -49,14 +46,29 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
     }
 
     baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
-    urlScheme = QStringLiteral("qsearchable-") + appName.toLower() + QStringLiteral("://");
+
+    QString cleanName = appName;
+    cleanName.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9]")));
+    if (cleanName.isEmpty()) {
+        cleanName = QStringLiteral("app");
+    }
+    fileExtension = QStringLiteral("qs") + cleanName.toLower();
+
+    progId = QStringLiteral("QSearchable.") + appName;
+    windowClassName = QStringLiteral("QSearchable_") + appName + QStringLiteral("_IPC");
+
+    setupIpc();
+    checkPendingActivation();
 }
 
 WindowsSearchBackend::~WindowsSearchBackend()
 {
-#ifdef Q_OS_WIN
+    if (ipcWindow) {
+        DestroyWindow(ipcWindow);
+        UnregisterClassW(reinterpret_cast<const wchar_t *>(windowClassName.utf16()),
+                         GetModuleHandle(nullptr));
+    }
     CoUninitialize();
-#endif
 }
 
 bool WindowsSearchBackend::isSupported() const
@@ -78,13 +90,27 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
         QString dir = domainDir(domain);
         QDir().mkpath(dir);
 
-        QString filePath = linkFilePath(domain, item.uniqueIdentifier());
-        QString url = urlScheme + item.uniqueIdentifier();
-
-        if (createShellLink(filePath, url, item.title())) {
-            notifyShell(filePath);
-            ++indexed;
+        // Remove old file for this item (title may have changed)
+        QString oldFile = findFileForId(domain, item.uniqueIdentifier());
+        if (!oldFile.isEmpty()) {
+            QFile::remove(oldFile);
         }
+
+        QString filePath = itemFilePath(domain, item);
+        writeItemFile(filePath, item);
+        ++indexed;
+    }
+
+    if (!scopeRegistered && !items.isEmpty()) {
+        registerCrawlScope();
+        registerFileType();
+        scopeRegistered = true;
+    }
+
+    if (indexed > 0) {
+        SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
+                       reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
+                       nullptr);
     }
 
     const int count = indexed;
@@ -95,18 +121,20 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 
 void WindowsSearchBackend::removeItems(const QStringList &identifiers)
 {
-    // Search all domain subdirectories for matching files
     QDir base(baseDir);
     const QStringList domains = base.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
     for (const QString &domain : domains) {
         for (const QString &id : identifiers) {
-            QString filePath = linkFilePath(domain, id);
-            if (QFile::exists(filePath)) {
+            QString filePath = findFileForId(domain, id);
+            if (!filePath.isEmpty()) {
                 QFile::remove(filePath);
-                notifyShell(filePath);
             }
         }
     }
+
+    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
+                   reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
+                   nullptr);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -120,9 +148,12 @@ void WindowsSearchBackend::removeItemsInDomains(const QStringList &domainIdentif
         QDir domainDirectory(dir);
         if (domainDirectory.exists()) {
             domainDirectory.removeRecursively();
-            notifyShell(dir);
         }
     }
+
+    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
+                   reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
+                   nullptr);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -134,68 +165,268 @@ void WindowsSearchBackend::removeAllItems()
     QDir base(baseDir);
     if (base.exists()) {
         base.removeRecursively();
-        notifyShell(baseDir);
     }
+
+    unregisterCrawlScope();
+    unregisterFileType();
+    scopeRegistered = false;
+
+    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
+                   reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
+                   nullptr);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
     });
 }
 
-QString WindowsSearchBackend::domainDir(const QString &domainIdentifier) const
+QString WindowsSearchBackend::domainDir(const QString &domain) const
 {
-    return baseDir + QLatin1Char('/') + domainIdentifier;
+    return baseDir + QLatin1Char('/') + domain;
 }
 
-QString WindowsSearchBackend::linkFilePath(const QString &domainIdentifier, const QString &uniqueId) const
+QString WindowsSearchBackend::itemFilePath(const QString &domain, const QSearchableItem &item) const
 {
-    return domainDir(domainIdentifier) + QLatin1Char('/') + uniqueId + QStringLiteral(".lnk");
+    QString title = sanitizeTitle(item.title());
+    QString hash = hashId(item.uniqueIdentifier());
+    return domainDir(domain) + QLatin1Char('/') + title
+           + QStringLiteral(" [") + hash + QStringLiteral("].") + fileExtension;
 }
 
-bool WindowsSearchBackend::createShellLink(const QString &filePath, const QString &url, const QString &description)
+QString WindowsSearchBackend::findFileForId(const QString &domain, const QString &id) const
 {
-#ifdef Q_OS_WIN
-    IShellLinkW *shellLink = nullptr;
-    HRESULT hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                                  IID_IShellLinkW, reinterpret_cast<void **>(&shellLink));
+    QString hash = hashId(id);
+    QString suffix = QStringLiteral("[") + hash + QStringLiteral("].");
+    QDir dir(domainDir(domain));
+    const QStringList entries = dir.entryList(QDir::Files);
+    for (const QString &entry : entries) {
+        if (entry.contains(suffix)) {
+            return dir.absoluteFilePath(entry);
+        }
+    }
+    return QString();
+}
+
+void WindowsSearchBackend::writeItemFile(const QString &filePath, const QSearchableItem &item)
+{
+    QSettings settings(filePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("UniqueIdentifier"), item.uniqueIdentifier());
+    settings.setValue(QStringLiteral("DomainIdentifier"), item.domainIdentifier());
+    settings.setValue(QStringLiteral("Title"), item.title());
+    settings.setValue(QStringLiteral("ContentDescription"), item.contentDescription());
+    settings.setValue(QStringLiteral("DisplayName"), item.displayName());
+    settings.setValue(QStringLiteral("Keywords"), item.keywords().join(QStringLiteral(", ")));
+    
+    if (item.url().isValid()) {
+        settings.setValue(QStringLiteral("URL"), item.url().toString());
+    }
+    
+    if (item.timestamp().isValid()) {
+        settings.setValue(QStringLiteral("Timestamp"), 
+        item.timestamp().toString(Qt::ISODate));
+    }
+
+    settings.sync();
+}
+
+QString WindowsSearchBackend::parseIdFromFile(const QString &filePath) const
+{
+    QSettings settings(filePath, QSettings::IniFormat);
+    return settings.value(QStringLiteral("UniqueIdentifier")).toString();
+}
+
+QString WindowsSearchBackend::hashId(const QString &id) const
+{
+    return QString::number(qHash(id, 0), 16);
+}
+
+QString WindowsSearchBackend::sanitizeTitle(const QString &title) const
+{
+    QString sanitized = title;
+    sanitized.remove(QRegularExpression(QStringLiteral("[<>:\"/\\\\|?*]")));
+    sanitized = sanitized.simplified();
+
+    if (sanitized.length() > 100) {
+        sanitized = sanitized.left(100);
+    }
+
+    if (sanitized.isEmpty()) {
+        sanitized = QStringLiteral("item");
+    }
+
+    return sanitized;
+}
+
+void WindowsSearchBackend::registerCrawlScope()
+{
+    ISearchManager *searchManager = nullptr;
+    HRESULT hr = CoCreateInstance(__uuidof(CSearchManager), nullptr, CLSCTX_ALL,
+                                 IID_PPV_ARGS(&searchManager));
     if (FAILED(hr)) {
-        return false;
+        return;
     }
 
-    // Set the URL as the target path argument so the default browser opens it.
-    shellLink->SetPath(L"cmd.exe");
-    shellLink->SetArguments(reinterpret_cast<const wchar_t *>(
-        (QStringLiteral("/c start \"\" \"") + url + QStringLiteral("\"")).utf16()));
-    shellLink->SetShowCmd(SW_HIDE);
-
-    if (!description.isEmpty()) {
-        shellLink->SetDescription(reinterpret_cast<const wchar_t *>(description.utf16()));
+    ISearchCatalogManager *catalogManager = nullptr;
+    hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
+    searchManager->Release();
+    if (FAILED(hr)) {
+        return;
     }
 
-    IPersistFile *persistFile = nullptr;
-    hr = shellLink->QueryInterface(IID_IPersistFile, reinterpret_cast<void **>(&persistFile));
-    if (SUCCEEDED(hr)) {
-        hr = persistFile->Save(reinterpret_cast<const wchar_t *>(filePath.utf16()), TRUE);
-        persistFile->Release();
+    ISearchCrawlScopeManager *scopeManager = nullptr;
+    hr = catalogManager->GetCrawlScopeManager(&scopeManager);
+    catalogManager->Release();
+    if (FAILED(hr)) {
+        return;
     }
 
-    shellLink->Release();
-    return SUCCEEDED(hr);
-#else
-    Q_UNUSED(filePath);
-    Q_UNUSED(url);
-    Q_UNUSED(description);
-    return false;
-#endif
+    QString url = QStringLiteral("file:///") + QDir::toNativeSeparators(baseDir);
+    scopeManager->AddUserScopeRule(reinterpret_cast<const wchar_t *>(url.utf16()),
+                                   TRUE, TRUE, FALSE);
+    scopeManager->SaveAll();
+    scopeManager->Release();
 }
 
-void WindowsSearchBackend::notifyShell(const QString &path)
+void WindowsSearchBackend::unregisterCrawlScope()
 {
-#ifdef Q_OS_WIN
-    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
-                   reinterpret_cast<const void *>(path.toStdWString().c_str()),
-                   nullptr);
-#else
-    Q_UNUSED(path);
-#endif
+    ISearchManager *searchManager = nullptr;
+    HRESULT hr = CoCreateInstance(__uuidof(CSearchManager), nullptr, CLSCTX_ALL,
+                                 IID_PPV_ARGS(&searchManager));
+    if (FAILED(hr)) {
+        return;
+    }
+
+    ISearchCatalogManager *catalogManager = nullptr;
+    hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
+    searchManager->Release();
+    if (FAILED(hr))
+        return;
+
+    ISearchCrawlScopeManager *scopeManager = nullptr;
+    hr = catalogManager->GetCrawlScopeManager(&scopeManager);
+    catalogManager->Release();
+    if (FAILED(hr)) {
+        return;
+    }
+
+    QString url = QStringLiteral("file:///") + QDir::toNativeSeparators(baseDir);
+    scopeManager->RemoveScopeRule(reinterpret_cast<const wchar_t *>(url.utf16()));
+    scopeManager->SaveAll();
+    scopeManager->Release();
+}
+
+// --- File type association ---
+
+void WindowsSearchBackend::registerFileType()
+{
+    QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
+    QSettings extSettings(extKey, QSettings::NativeFormat);
+    extSettings.setValue(QStringLiteral("."), progId);
+
+    QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
+    QSettings progSettings(progKey, QSettings::NativeFormat);
+    QString appPath = QCoreApplication::applicationFilePath();
+    progSettings.setValue(QStringLiteral("shell/open/command/."),
+                          QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
+                              + QStringLiteral("\" \"%1\""));
+}
+
+void WindowsSearchBackend::unregisterFileType()
+{
+    QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
+    QSettings extSettings(extKey, QSettings::NativeFormat);
+    extSettings.clear();
+
+    QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
+    QSettings progSettings(progKey, QSettings::NativeFormat);
+    progSettings.clear();
+}
+
+void WindowsSearchBackend::setupIpc()
+{
+    // Check if an existing instance already has the IPC window
+    HWND existing = FindWindowExW(HWND_MESSAGE, nullptr,
+                                  reinterpret_cast<const wchar_t *>(windowClassName.utf16()),
+                                  nullptr);
+
+    // Check if we were launched with a file argument
+    QStringList args = QCoreApplication::arguments();
+    QString targetFile;
+    for (int i = 1; i < args.size(); ++i) {
+        if (args[i].endsWith(QLatin1Char('.') + fileExtension)) {
+            targetFile = args[i];
+            break;
+        }
+    }
+
+    if (existing && !targetFile.isEmpty()) {
+        // Send file path to existing instance via WM_COPYDATA
+        QByteArray data = targetFile.toUtf8();
+        COPYDATASTRUCT cds = {};
+        cds.cbData = static_cast<DWORD>(data.size());
+        cds.lpData = data.data();
+        SendMessageW(existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+
+        // Schedule quit of this second instance
+        QTimer::singleShot(0, []() {
+            QCoreApplication::quit();
+        });
+        return;
+    }
+
+    // Register window class and create hidden message-only window
+    WNDCLASSW wc = {};
+    wc.lpfnWndProc = windowProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = reinterpret_cast<const wchar_t *>(windowClassName.utf16());
+    RegisterClassW(&wc);
+
+    ipcWindow = CreateWindowW(
+        reinterpret_cast<const wchar_t *>(windowClassName.utf16()),
+        L"", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr,
+        GetModuleHandle(nullptr), nullptr);
+
+    SetWindowLongPtrW(ipcWindow, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+}
+
+void WindowsSearchBackend::checkPendingActivation()
+{
+    QStringList args = QCoreApplication::arguments();
+    for (int i = 1; i < args.size(); ++i) {
+        if (args[i].endsWith(QLatin1Char('.') + fileExtension)) {
+            QString filePath = args[i];
+            QTimer::singleShot(0, this, [this, filePath]() {
+                handleActivation(filePath);
+            });
+            return;
+        }
+    }
+}
+
+void WindowsSearchBackend::handleActivation(const QString &filePath)
+{
+    QString id = parseIdFromFile(filePath);
+    if (!id.isEmpty()) {
+        emit activated(id);
+    }
+}
+
+LRESULT CALLBACK WindowsSearchBackend::windowProc(HWND hwnd, UINT msg,
+                                                   WPARAM wParam, LPARAM lParam)
+{
+    if (msg == WM_COPYDATA) {
+        auto *cds = reinterpret_cast<COPYDATASTRUCT *>(lParam);
+        QString filePath = QString::fromUtf8(
+            reinterpret_cast<const char *>(cds->lpData),
+            static_cast<int>(cds->cbData));
+
+        auto *self = reinterpret_cast<WindowsSearchBackend *>(
+            GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        if (self) {
+            self->handleActivation(filePath);
+        }
+
+        return TRUE;
+    }
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
 }

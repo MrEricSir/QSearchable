@@ -26,6 +26,7 @@
 #include "QSearchableIndexBackend.h"
 
 #include <QDir>
+#include <windows.h>
 
 class WindowsSearchBackend : public QSearchableIndexBackend
 {
@@ -43,13 +44,31 @@ public:
     void removeAllItems() override;
 
 private:
-    QString domainDir(const QString &domainIdentifier) const;
-    QString linkFilePath(const QString &domainIdentifier, const QString &uniqueId) const;
-    bool createShellLink(const QString &filePath, const QString &url, const QString &description);
-    void notifyShell(const QString &path);
+    QString domainDir(const QString &domain) const;
+    QString itemFilePath(const QString &domain, const QSearchableItem &item) const;
+    QString findFileForId(const QString &domain, const QString &id) const;
+    void writeItemFile(const QString &filePath, const QSearchableItem &item);
+    QString parseIdFromFile(const QString &filePath) const;
+    QString hashId(const QString &id) const;
+    QString sanitizeTitle(const QString &title) const;
+
+    void registerCrawlScope();
+    void registerFileType();
+    void unregisterCrawlScope();
+    void unregisterFileType();
+
+    void setupIpc();
+    void checkPendingActivation();
+    void handleActivation(const QString &filePath);
+
+    static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     QString baseDir;
-    QString urlScheme;
+    QString fileExtension;
+    QString progId;
+    QString windowClassName;
+    bool scopeRegistered = false;
+    HWND ipcWindow = nullptr;
 };
 
 #endif // WINDOWSSEARCHBACKEND_H
