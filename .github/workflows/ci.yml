@@ -38,7 +38,9 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = "${{ env.QT_ROOT_DIR }}\bin;$env:PATH"
-          ctest --test-dir build --output-on-failure -C Release
+          $testExe = Get-ChildItem -Path build -Recurse -Filter "tst_qsearchableindex.exe" | Select-Object -First 1
+          Write-Host "Test executable: $($testExe.FullName)"
+          & $testExe.FullName -v2 2>&1
 
   docs:
     name: Documentation
