@@ -50,6 +50,8 @@ public:
     virtual void removeItemsInDomains(const QStringList &domainIdentifiers) = 0;
     virtual void removeAllItems() = 0;
 
+    virtual void uninstall() = 0;
+
 signals:
     void indexingSucceeded(int count);
     void removalSucceeded();

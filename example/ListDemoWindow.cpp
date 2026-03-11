@@ -39,12 +39,18 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     auto *bottomBar = new QHBoxLayout;
     auto *addButton = new QPushButton("+");
+    auto *uninstallButton = new QPushButton("Uninstall");
     statusLabel = new QLabel("Ready");
     bottomBar->addWidget(addButton);
     bottomBar->addWidget(statusLabel, 1);
+    bottomBar->addWidget(uninstallButton);
     mainLayout->addLayout(bottomBar);
 
     connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); });
+    connect(uninstallButton, &QPushButton::clicked, this, [this]() {
+        QSearchableIndex::Get()->uninstall();
+        statusLabel->setText("Uninstalled");
+    });
 
     auto *index = QSearchableIndex::Get();
     connect(index, &QSearchableIndex::indexingSucceeded,

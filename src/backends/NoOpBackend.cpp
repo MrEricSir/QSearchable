@@ -64,3 +64,8 @@ void NoOpBackend::removeAllItems()
         emit removalSucceeded();
     });
 }
+
+void NoOpBackend::uninstall()
+{
+    removeAllItems();
+}

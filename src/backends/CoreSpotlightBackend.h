@@ -39,6 +39,7 @@ public:
     void removeItems(const QStringList &identifiers) override;
     void removeItemsInDomains(const QStringList &domainIdentifiers) override;
     void removeAllItems() override;
+    void uninstall() override;
 
 private:
     void *index; // CSSearchableIndex*

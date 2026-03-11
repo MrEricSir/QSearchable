@@ -169,6 +169,22 @@ void WindowsSearchBackend::removeAllItems()
         base.removeRecursively();
     }
 
+    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
+                   reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
+                   nullptr);
+
+    QTimer::singleShot(0, this, [this]() {
+        emit removalSucceeded();
+    });
+}
+
+void WindowsSearchBackend::uninstall()
+{
+    QDir base(baseDir);
+    if (base.exists()) {
+        base.removeRecursively();
+    }
+
     unregisterCrawlScope();
     unregisterFileType();
     scopeRegistered = false;

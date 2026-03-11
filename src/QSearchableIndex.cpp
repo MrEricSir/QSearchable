@@ -98,3 +98,8 @@ void QSearchableIndex::removeAllItems()
 {
     backend->removeAllItems();
 }
+
+void QSearchableIndex::uninstall()
+{
+    backend->uninstall();
+}

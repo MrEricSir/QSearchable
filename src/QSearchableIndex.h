@@ -113,6 +113,12 @@ public:
     */
     void removeAllItems();
 
+    /*!
+        Uninstalls all traces of the search index and related artifacts.
+        Emits removalSucceeded() when complete.
+    */
+    void uninstall();
+
 signals:
     /*!
         Emitted after indexItems() completes successfully.

@@ -139,6 +139,11 @@ void GnomeSearchBackend::removeAllItems()
     });
 }
 
+void GnomeSearchBackend::uninstall()
+{
+    removeAllItems();
+}
+
 QStringList GnomeSearchBackend::getInitialResultSet(const QStringList &terms)
 {
     QStringList results;
