@@ -50,7 +50,6 @@ private:
     QString findFileForId(const QString &domain, const QString &id) const;
     void writeItemFile(const QString &filePath, const QSearchableItem &item);
     QString parseIdFromFile(const QString &filePath) const;
-    QString hashId(const QString &id) const;
     QString sanitizeTitle(const QString &title) const;
 
     void registerCrawlScope();

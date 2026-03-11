@@ -206,20 +206,31 @@ QString WindowsSearchBackend::domainDir(const QString &domain) const
 QString WindowsSearchBackend::itemFilePath(const QString &domain, const QSearchableItem &item) const
 {
     QString title = sanitizeTitle(item.title());
-    QString hash = hashId(item.uniqueIdentifier());
-    return domainDir(domain) + QLatin1Char('/') + title
-           + QStringLiteral(" [") + hash + QStringLiteral("].") + fileExtension;
+    QString dir = domainDir(domain);
+    QString path = dir + QLatin1Char('/') + title + QLatin1Char('.') + fileExtension;
+
+    if (!QFile::exists(path)) {
+        return path;
+    }
+
+    // Avoid filename collisions.
+    // TODO: Find a more elegant way to handle this.
+    for (int i = 2; ; ++i) {
+        path = dir + QLatin1Char('/') + title + QStringLiteral(" (%1).").arg(i) + fileExtension;
+        if (!QFile::exists(path)) {
+            return path;
+        }
+    }
 }
 
 QString WindowsSearchBackend::findFileForId(const QString &domain, const QString &id) const
 {
-    QString hash = hashId(id);
-    QString suffix = QStringLiteral("[") + hash + QStringLiteral("].");
     QDir dir(domainDir(domain));
     const QStringList entries = dir.entryList(QDir::Files);
     for (const QString &entry : entries) {
-        if (entry.contains(suffix)) {
-            return dir.absoluteFilePath(entry);
+        QString path = dir.absoluteFilePath(entry);
+        if (parseIdFromFile(path) == id) {
+            return path;
         }
     }
     return QString();
@@ -251,11 +262,6 @@ QString WindowsSearchBackend::parseIdFromFile(const QString &filePath) const
 {
     QSettings settings(filePath, QSettings::IniFormat);
     return settings.value(QStringLiteral("UniqueIdentifier")).toString();
-}
-
-QString WindowsSearchBackend::hashId(const QString &id) const
-{
-    return QString::number(qHash(id, 0), 16);
 }
 
 QString WindowsSearchBackend::sanitizeTitle(const QString &title) const
@@ -317,8 +323,9 @@ void WindowsSearchBackend::unregisterCrawlScope()
     ISearchCatalogManager *catalogManager = nullptr;
     hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
     searchManager->Release();
-    if (FAILED(hr))
+    if (FAILED(hr)) {
         return;
+    }
 
     ISearchCrawlScopeManager *scopeManager = nullptr;
     hr = catalogManager->GetCrawlScopeManager(&scopeManager);
@@ -347,17 +354,19 @@ void WindowsSearchBackend::registerFileType()
     appPathsSettings.setValue(QStringLiteral("Path"),
                               QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
 
-    // Register file extension -> progId
+    // Register file extension to progId.
     QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
     QSettings extSettings(extKey, QSettings::NativeFormat);
     extSettings.setValue(QStringLiteral("."), progId);
 
-    // Register progId -> shell open command
+    // Register progId to shell open command.
     QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
     QSettings progSettings(progKey, QSettings::NativeFormat);
     progSettings.setValue(QStringLiteral("shell/open/command/."),
                           QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
                               + QStringLiteral("\" \"%1\""));
+    progSettings.setValue(QStringLiteral("DefaultIcon/."),
+                          QDir::toNativeSeparators(appPath) + QStringLiteral(",0"));
 }
 
 void WindowsSearchBackend::unregisterFileType()
@@ -384,7 +393,7 @@ void WindowsSearchBackend::setupIpc()
                                   reinterpret_cast<const wchar_t *>(windowClassName.utf16()),
                                   nullptr);
 
-    // Check if we were launched with a file argument
+    // Check if we were launched with a file argument.
     QStringList args = QCoreApplication::arguments();
     QString targetFile;
     for (int i = 1; i < args.size(); ++i) {
@@ -395,14 +404,14 @@ void WindowsSearchBackend::setupIpc()
     }
 
     if (existing && !targetFile.isEmpty()) {
-        // Send file path to existing instance via WM_COPYDATA
+        // Send file path to existing instance via WM_COPYDATA.
         QByteArray data = targetFile.toUtf8();
         COPYDATASTRUCT cds = {};
         cds.cbData = static_cast<DWORD>(data.size());
         cds.lpData = data.data();
         SendMessageW(existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
 
-        // Schedule quit of this second instance
+        // Quit temporary instance when complete.
         QTimer::singleShot(0, []() {
             QCoreApplication::quit();
         });
