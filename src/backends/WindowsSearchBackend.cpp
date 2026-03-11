@@ -85,6 +85,7 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
     if (!scopeRegistered && !items.isEmpty()) {
         registerCrawlScope();
         registerFileType();
+        SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
         scopeRegistered = true;
     }
 
@@ -358,10 +359,18 @@ void WindowsSearchBackend::registerFileType()
     QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
     QSettings extSettings(extKey, QSettings::NativeFormat);
     extSettings.setValue(QStringLiteral("."), progId);
+    extSettings.setValue(QStringLiteral("Content Type"), QStringLiteral("text/plain"));
 
-    // Register progId to shell open command.
+    // Register progId with name, icon, and shell open command.
     QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
     QSettings progSettings(progKey, QSettings::NativeFormat);
+    QString appName = QCoreApplication::applicationName();
+    if (appName.isEmpty()) {
+        appName = QStringLiteral("QSearchable");
+    }
+    progSettings.setValue(QStringLiteral("."), appName);
+    progSettings.setValue(QStringLiteral("FriendlyTypeName"), appName);
+    progSettings.setValue(QStringLiteral("NeverShowExt"), QStringLiteral(""));
     progSettings.setValue(QStringLiteral("shell/open/command/."),
                           QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
                               + QStringLiteral("\" \"%1\""));
