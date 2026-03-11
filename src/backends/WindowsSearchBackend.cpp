@@ -22,7 +22,9 @@
 
 #include "WindowsSearchBackend.h"
 
+#include <QBuffer>
 #include <QCoreApplication>
+#include <QDataStream>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -83,7 +85,6 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
     if (!scopeRegistered && !items.isEmpty()) {
         registerCrawlScope();
         registerFileType();
-        SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
         scopeRegistered = true;
     }
 
@@ -186,7 +187,6 @@ void WindowsSearchBackend::uninstall()
 
     unregisterCrawlScope();
     unregisterFileType();
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     scopeRegistered = false;
 
     QTimer::singleShot(0, this, [this]() {
@@ -338,66 +338,102 @@ void WindowsSearchBackend::unregisterCrawlScope()
 
 void WindowsSearchBackend::registerFileType()
 {
-    QString appPath = QCoreApplication::applicationFilePath();
-    QString appFileName = QFileInfo(appPath).fileName();
+    QString nativeAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    QString appFileName = QFileInfo(nativeAppPath).fileName();
+    QString classesBase = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\");
 
-    // Register with App Paths. Technically will work without this, but
-    // only if installed.
-    QString appPathsKey = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
-                          + appFileName;
-    QSettings appPathsSettings(appPathsKey, QSettings::NativeFormat);
-    appPathsSettings.setValue(QStringLiteral("."), QDir::toNativeSeparators(appPath));
-    appPathsSettings.setValue(QStringLiteral("Path"),
-                              QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
-
-    // Register file extension to progId.
-    QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
-    QSettings extSettings(extKey, QSettings::NativeFormat);
-    extSettings.setValue(QStringLiteral("."), progId);
-    extSettings.setValue(QStringLiteral("Content Type"), QStringLiteral("text/plain"));
-
-    // Register progId with name, icon, and shell open command.
-    QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
-    QSettings progSettings(progKey, QSettings::NativeFormat);
     QString appName = QCoreApplication::applicationName();
     if (appName.isEmpty()) {
         appName = QStringLiteral("QSearchable");
     }
-    progSettings.setValue(QStringLiteral("."), appName);
-    progSettings.setValue(QStringLiteral("FriendlyTypeName"), appName);
-    progSettings.setValue(QStringLiteral("NeverShowExt"), QStringLiteral(""));
-    progSettings.setValue(QStringLiteral("shell/open/command/."),
-                          QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
-                              + QStringLiteral("\" \"%1\""));
-    QString iconPath = saveAppIcon();
-    if (!iconPath.isEmpty()) {
-        progSettings.setValue(QStringLiteral("DefaultIcon/."),
-                              QDir::toNativeSeparators(iconPath));
-    } else {
-        progSettings.setValue(QStringLiteral("DefaultIcon/."),
-                              QDir::toNativeSeparators(appPath) + QStringLiteral(",0"));
+
+    // Set our App Paths key.
+    {
+        QString key = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
+                      + appFileName;
+        QSettings s(key, QSettings::NativeFormat);
+        s.setValue(QStringLiteral("."), nativeAppPath);
+        s.setValue(QStringLiteral("Path"),
+                   QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
+        s.sync();
     }
+
+    // Register file extension -> progId.
+    {
+        QSettings s(classesBase + QStringLiteral(".") + fileExtension, QSettings::NativeFormat);
+        s.setValue(QStringLiteral("."), progId);
+        s.setValue(QStringLiteral("Content Type"), QStringLiteral("text/plain"));
+        s.setValue(QStringLiteral("PerceivedType"), QStringLiteral("document"));
+        s.sync();
+    }
+
+    // Register "friendly" name and hide our search file extension (when possible.)
+    {
+        QSettings s(classesBase + progId, QSettings::NativeFormat);
+        s.setValue(QStringLiteral("."), appName);
+        s.setValue(QStringLiteral("FriendlyTypeName"), appName);
+        s.setValue(QStringLiteral("NeverShowExt"), QStringLiteral(""));
+        s.sync();
+    }
+
+    // Create shell open command.
+    {
+        QSettings s(classesBase + progId + QStringLiteral("\\shell\\open\\command"),
+                    QSettings::NativeFormat);
+        s.setValue(QStringLiteral("."),
+                   QStringLiteral("\"") + nativeAppPath + QStringLiteral("\" \"%1\""));
+        s.sync();
+    }
+
+    // Register DefaultIcon for our search file type.
+    {
+        QSettings s(classesBase + progId + QStringLiteral("\\DefaultIcon"),
+                    QSettings::NativeFormat);
+        QString iconPath = saveAppIcon();
+        if (!iconPath.isEmpty()) {
+            s.setValue(QStringLiteral("."), QDir::toNativeSeparators(iconPath));
+        } else {
+            s.setValue(QStringLiteral("."), nativeAppPath + QStringLiteral(",0"));
+        }
+        s.sync();
+    }
+
+    // Tell Explorer to re-check file associations.
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 }
 
 void WindowsSearchBackend::unregisterFileType()
 {
+    // Undo everything we did in registerFileType()
     QString appFileName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
-    QString appPathsKey = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
-                          + appFileName;
-    QSettings appPathsSettings(appPathsKey, QSettings::NativeFormat);
-    appPathsSettings.clear();
+    QString classesBase = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\");
 
-    QString extKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\.") + fileExtension;
-    QSettings extSettings(extKey, QSettings::NativeFormat);
-    extSettings.clear();
+    {
+        QString key = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
+                      + appFileName;
+        QSettings s(key, QSettings::NativeFormat);
+        s.clear();
+        s.sync();
+    }
+    {
+        QSettings s(classesBase + QStringLiteral(".") + fileExtension, QSettings::NativeFormat);
+        s.clear();
+        s.sync();
+    }
+    {
+        QSettings s(classesBase + progId, QSettings::NativeFormat);
+        s.clear();
+        s.sync();
+    }
 
-    QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
-    QSettings progSettings(progKey, QSettings::NativeFormat);
-    progSettings.clear();
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 }
 
 QString WindowsSearchBackend::saveAppIcon()
 {
+    // Unfortunately Qt's .ico file support doesn't handle icons with ultiple
+    // resolutions, so we have to create our icon the hard way.
+
     QIcon appIcon = QGuiApplication::windowIcon();
     if (appIcon.isNull()) {
         return QString();
@@ -406,12 +442,60 @@ QString WindowsSearchBackend::saveAppIcon()
     QDir().mkpath(baseDir);
     QString icoPath = baseDir + QStringLiteral("/app.ico");
 
-    QImage img = appIcon.pixmap(256, 256).toImage();
-    if (img.isNull()) {
+    static const int sizes[] = {16, 32, 48, 256};
+    QList<QByteArray> pngEntries;
+    QList<int> entrySizes;
+
+    for (int size : sizes) {
+        QImage img = appIcon.pixmap(size, size).toImage();
+        if (img.isNull()) {
+            continue;
+        }
+        QByteArray png;
+        QBuffer buf(&png);
+        buf.open(QIODevice::WriteOnly);
+        img.save(&buf, "PNG");
+        if (!png.isEmpty()) {
+            pngEntries.append(png);
+            entrySizes.append(size);
+        }
+    }
+
+    if (pngEntries.isEmpty()) {
         return QString();
     }
 
-    if (img.save(icoPath, "ICO")) {
+    QByteArray ico;
+    QDataStream ds(&ico, QIODevice::WriteOnly);
+    ds.setByteOrder(QDataStream::LittleEndian);
+
+    // ICO header: reserved(2) + type(2) + count(2)
+    ds << quint16(0) << quint16(1) << quint16(pngEntries.size());
+
+    // Directory entries: 16 bytes each
+    int dataOffset = 6 + 16 * pngEntries.size();
+    for (int i = 0; i < pngEntries.size(); ++i) {
+        int s = entrySizes[i];
+        ds << quint8(s < 256 ? s : 0);         // width
+        ds << quint8(s < 256 ? s : 0);         // height
+        ds << quint8(0);                        // color palette
+        ds << quint8(0);                        // reserved
+        ds << quint16(1);                       // color planes
+        ds << quint16(32);                      // bits per pixel
+        ds << quint32(pngEntries[i].size());    // image data size
+        ds << quint32(dataOffset);              // image data offset
+        dataOffset += pngEntries[i].size();
+    }
+
+    // Image data (PNG-compressed)
+    for (const QByteArray &png : pngEntries) {
+        ds.writeRawData(png.constData(), png.size());
+    }
+
+    QFile file(icoPath);
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(ico);
+        file.close();
         return icoPath;
     }
 
@@ -420,7 +504,7 @@ QString WindowsSearchBackend::saveAppIcon()
 
 void WindowsSearchBackend::setupIpc()
 {
-    // Check if an existing instance already has the IPC window
+    // Check if an existing instance already has the IPC window.
     HWND existing = FindWindowExW(HWND_MESSAGE, nullptr,
                                   reinterpret_cast<const wchar_t *>(windowClassName.utf16()),
                                   nullptr);
