@@ -26,6 +26,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QIcon>
+#include <QImage>
 #include <QLibraryInfo>
 #include <QRegularExpression>
 #include <QSettings>
@@ -49,12 +52,7 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
 
     baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
 
-    QString cleanName = appName;
-    cleanName.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9]")));
-    if (cleanName.isEmpty()) {
-        cleanName = QStringLiteral("app");
-    }
-    fileExtension = QStringLiteral("qs") + cleanName.toLower();
+    fileExtension = QStringLiteral("qs") + QString::number(qHash(appName), 16).left(4);
 
     progId = QStringLiteral("QSearchable.") + appName;
     windowClassName = QStringLiteral("QSearchable_") + appName + QStringLiteral("_IPC");
@@ -188,11 +186,8 @@ void WindowsSearchBackend::uninstall()
 
     unregisterCrawlScope();
     unregisterFileType();
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     scopeRegistered = false;
-
-    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH,
-                   reinterpret_cast<const void *>(baseDir.toStdWString().c_str()),
-                   nullptr);
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
@@ -374,8 +369,14 @@ void WindowsSearchBackend::registerFileType()
     progSettings.setValue(QStringLiteral("shell/open/command/."),
                           QStringLiteral("\"") + QDir::toNativeSeparators(appPath)
                               + QStringLiteral("\" \"%1\""));
-    progSettings.setValue(QStringLiteral("DefaultIcon/."),
-                          QDir::toNativeSeparators(appPath) + QStringLiteral(",0"));
+    QString iconPath = saveAppIcon();
+    if (!iconPath.isEmpty()) {
+        progSettings.setValue(QStringLiteral("DefaultIcon/."),
+                              QDir::toNativeSeparators(iconPath));
+    } else {
+        progSettings.setValue(QStringLiteral("DefaultIcon/."),
+                              QDir::toNativeSeparators(appPath) + QStringLiteral(",0"));
+    }
 }
 
 void WindowsSearchBackend::unregisterFileType()
@@ -393,6 +394,28 @@ void WindowsSearchBackend::unregisterFileType()
     QString progKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\") + progId;
     QSettings progSettings(progKey, QSettings::NativeFormat);
     progSettings.clear();
+}
+
+QString WindowsSearchBackend::saveAppIcon()
+{
+    QIcon appIcon = QGuiApplication::windowIcon();
+    if (appIcon.isNull()) {
+        return QString();
+    }
+
+    QDir().mkpath(baseDir);
+    QString icoPath = baseDir + QStringLiteral("/app.ico");
+
+    QImage img = appIcon.pixmap(256, 256).toImage();
+    if (img.isNull()) {
+        return QString();
+    }
+
+    if (img.save(icoPath, "ICO")) {
+        return icoPath;
+    }
+
+    return QString();
 }
 
 void WindowsSearchBackend::setupIpc()

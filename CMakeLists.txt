@@ -37,11 +37,12 @@ if(APPLE)
         "-framework UniformTypeIdentifiers"
     )
 elseif(WIN32)
+    find_package(Qt6 REQUIRED COMPONENTS Gui)
     target_sources(QSearchable PRIVATE
         src/backends/WindowsSearchBackend.cpp
         src/backends/WindowsSearchBackend.h
     )
-    target_link_libraries(QSearchable PRIVATE shell32 ole32 uuid user32)
+    target_link_libraries(QSearchable PRIVATE Qt6::Gui shell32 ole32 uuid user32)
 elseif(UNIX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     target_sources(QSearchable PRIVATE

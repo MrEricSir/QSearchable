@@ -26,6 +26,7 @@
 #include "QSearchableIndexBackend.h"
 
 #include <QDir>
+#include <QString>
 #include <windows.h>
 
 class WindowsSearchBackend : public QSearchableIndexBackend
@@ -56,6 +57,7 @@ private:
     void registerFileType();
     void unregisterCrawlScope();
     void unregisterFileType();
+    QString saveAppIcon();
 
     void setupIpc();
     void checkPendingActivation();
