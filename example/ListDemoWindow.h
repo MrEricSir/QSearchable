@@ -6,6 +6,7 @@
 
 class QLabel;
 class QLineEdit;
+class QPushButton;
 class QVBoxLayout;
 
 class ListDemoWindow : public QWidget
@@ -27,9 +28,12 @@ private:
     void indexItem(int id, const QString &text);
     void indexAllItems();
     void clearHighlight();
+    void updateInstallButtons();
 
     QVBoxLayout *rowLayout;
     QLabel *statusLabel;
+    QPushButton *installButton;
+    QPushButton *uninstallButton;
     QMap<int, QLineEdit *> items;
     QLineEdit *highlightedItem = nullptr;
     int nextId = 0;

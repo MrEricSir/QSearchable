@@ -92,6 +92,16 @@ public:
     bool isSupported() const;
 
     /*!
+        Returns \c true if this process was launched to relay a search-result
+        activation to an already-running instance.
+
+        When this returns \c true the application should skip showing its main
+        window — the process will quit automatically after delivering the
+        activation to the existing instance.
+    */
+    bool isRelayInstance() const;
+
+    /*!
         Indexes (or updates) the given \a items. When the operation completes
         the indexingSucceeded() signal is emitted.
     */
@@ -118,6 +128,60 @@ public:
         Emits removalSucceeded() when complete.
     */
     void uninstall();
+
+    /*!
+        Returns \c true if system-level registration (e.g.\ the Windows
+        Search property handler) has already been performed via install().
+
+        On platforms that do not require separate installation this always
+        returns \c true.
+    */
+    bool isInstalled() const;
+
+    /*!
+        Returns the command-line arguments for QSearchableInstaller.exe
+        to register the property handler and file type.
+
+        Use this to integrate registration into your MSI, NSIS, or Inno
+        Setup installer. The returned list is suitable for passing directly
+        to QProcess or similar. For example:
+
+        \code
+        QStringList args = QSearchableIndex::Get()->installerArguments();
+        // args: ["install", "<ext>", "<clsid>", "<progid>", "<appname>", "<apppath>", "<dllpath>"]
+        \endcode
+
+        On platforms that do not require separate installation this
+        returns an empty list.
+
+        \sa uninstallerArguments(), install()
+    */
+    QStringList installerArguments() const;
+
+    /*!
+        Returns the command-line arguments for QSearchableInstaller.exe
+        to remove the property handler and file type registration.
+
+        \sa installerArguments(), uninstall()
+    */
+    QStringList uninstallerArguments() const;
+
+    /*!
+        Performs one-time system-level registration required for full search
+        integration (e.g.\ the Windows Search property handler).
+
+        On Windows this launches QSearchableInstaller.exe with elevation,
+        which triggers a UAC prompt. Call this explicitly from your
+        application's first-run or settings UI — it is \b not called
+        automatically by indexItems().
+
+        Alternatively, use installerArguments() to get the arguments and
+        run QSearchableInstaller.exe from your system installer (MSI,
+        NSIS, etc.) which already has admin privileges.
+
+        On other platforms this is a no-op.
+    */
+    void install();
 
 signals:
     /*!

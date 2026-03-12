@@ -17,6 +17,27 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     auto *mainLayout = new QVBoxLayout(this);
 
+    // Install / uninstall bar at the top.
+    auto *installBar = new QHBoxLayout;
+    installButton = new QPushButton("Install");
+    uninstallButton = new QPushButton("Uninstall");
+    installBar->addWidget(installButton);
+    installBar->addWidget(uninstallButton);
+    mainLayout->addLayout(installBar);
+
+    connect(installButton, &QPushButton::clicked, this, [this]() {
+        statusLabel->setText("Installing…");
+        QSearchableIndex::Get()->install();
+        updateInstallButtons();
+        statusLabel->setText("Installed");
+    });
+    connect(uninstallButton, &QPushButton::clicked, this, [this]() {
+        statusLabel->setText("Uninstalling…");
+        QSearchableIndex::Get()->uninstall();
+        updateInstallButtons();
+        statusLabel->setText("Uninstalled");
+    });
+
     // Description label.
     auto *description = new QLabel(
         "Items in this list are indexed for your platform's search provider: "
@@ -39,18 +60,12 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     auto *bottomBar = new QHBoxLayout;
     auto *addButton = new QPushButton("+");
-    auto *uninstallButton = new QPushButton("Uninstall");
     statusLabel = new QLabel("Ready");
     bottomBar->addWidget(addButton);
     bottomBar->addWidget(statusLabel, 1);
-    bottomBar->addWidget(uninstallButton);
     mainLayout->addLayout(bottomBar);
 
     connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); });
-    connect(uninstallButton, &QPushButton::clicked, this, [this]() {
-        QSearchableIndex::Get()->uninstall();
-        statusLabel->setText("Uninstalled");
-    });
 
     auto *index = QSearchableIndex::Get();
     connect(index, &QSearchableIndex::indexingSucceeded,
@@ -59,6 +74,8 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
             this, &ListDemoWindow::onErrorOccurred);
     connect(index, &QSearchableIndex::activated,
             this, &ListDemoWindow::onActivated);
+
+    updateInstallButtons();
 
     // Pre-populate with sample items.
     addItem("Alpaca");
@@ -87,8 +104,9 @@ void ListDemoWindow::addItem(const QString &text)
     });
 
     connect(lineEdit, &QLineEdit::textEdited, this, [this, lineEdit]() {
-        if (lineEdit == highlightedItem)
+        if (lineEdit == highlightedItem) {
             clearHighlight();
+        }
     });
 
     connect(removeButton, &QPushButton::clicked, this, [this, id, row]() {
@@ -106,8 +124,9 @@ void ListDemoWindow::addItem(const QString &text)
 
 void ListDemoWindow::removeItem(int id)
 {
-    if (items.value(id) == highlightedItem)
+    if (items.value(id) == highlightedItem) {
         clearHighlight();
+    }
 
     items.remove(id);
 
@@ -119,8 +138,9 @@ void ListDemoWindow::removeItem(int id)
 void ListDemoWindow::onEditingFinished(int id)
 {
     auto it = items.find(id);
-    if (it == items.end())
+    if (it == items.end()) {
         return;
+    }
 
     indexItem(id, it.value()->text());
 }
@@ -162,8 +182,9 @@ void ListDemoWindow::onErrorOccurred(const QString &errorMessage)
 
 void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
 {
-    if (!uniqueIdentifier.startsWith(QLatin1String("test-")))
+    if (!uniqueIdentifier.startsWith(QLatin1String("test-"))) {
         return;
+    }
 
     bool ok;
     int id = uniqueIdentifier.mid(5).toInt(&ok);
@@ -172,8 +193,9 @@ void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
     }
 
     auto it = items.find(id);
-    if (it == items.end())
+    if (it == items.end()) {
         return;
+    }
 
     clearHighlight();
 
@@ -181,7 +203,8 @@ void ListDemoWindow::onActivated(const QString &uniqueIdentifier)
     lineEdit->setStyleSheet(QStringLiteral("QLineEdit { background-color: #FFEB3B; }"));
     highlightedItem = lineEdit;
 
-    // Raise window.
+    // Bring window to front.
+    showNormal();
     raise();
     activateWindow();
 
@@ -194,4 +217,11 @@ void ListDemoWindow::clearHighlight()
         highlightedItem->setStyleSheet(QString());
         highlightedItem = nullptr;
     }
+}
+
+void ListDemoWindow::updateInstallButtons()
+{
+    bool installed = QSearchableIndex::Get()->isInstalled();
+    installButton->setEnabled(!installed);
+    uninstallButton->setEnabled(installed);
 }

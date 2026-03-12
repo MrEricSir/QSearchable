@@ -52,6 +52,12 @@ public:
 
     virtual void uninstall() = 0;
 
+    virtual void install() {};
+    virtual bool isInstalled() const { return true; }
+    virtual bool isRelayInstance() const { return false; }
+    virtual QStringList installerArguments() const { return {}; }
+    virtual QStringList uninstallerArguments() const { return {}; }
+
 signals:
     void indexingSucceeded(int count);
     void removalSucceeded();

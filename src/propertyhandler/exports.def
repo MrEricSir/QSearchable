@@ -1,0 +1,4 @@
+LIBRARY QSearchablePropertyHandler
+EXPORTS
+    DllGetClassObject   PRIVATE
+    DllCanUnloadNow     PRIVATE

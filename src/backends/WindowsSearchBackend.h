@@ -45,6 +45,11 @@ public:
     void removeItemsInDomains(const QStringList &domainIdentifiers) override;
     void removeAllItems() override;
     void uninstall() override;
+    void install() override;
+    bool isInstalled() const override;
+    bool isRelayInstance() const override;
+    QStringList installerArguments() const override;
+    QStringList uninstallerArguments() const override;
 
 private:
     QString domainDir(const QString &domain) const;
@@ -56,8 +61,11 @@ private:
 
     void registerCrawlScope();
     void registerFileType();
+    void registerPropertyHandler();
     void unregisterCrawlScope();
     void unregisterFileType();
+    void unregisterPropertyHandler();
+    QString generateClsid() const;
     QString saveAppIcon();
     bool writeIcoFile(const QString &path, const QIcon &icon);
 
@@ -70,6 +78,7 @@ private:
     QString baseDir;
     QString fileExtension;
     QString progId;
+    QString clsid;
     QString windowClassName;
     bool scopeRegistered = false;
     HWND ipcWindow = nullptr;

@@ -43,6 +43,31 @@ elseif(WIN32)
         src/backends/WindowsSearchBackend.h
     )
     target_link_libraries(QSearchable PRIVATE Qt6::Gui shell32 ole32 uuid user32)
+
+    # Property handler DLL — no Qt dependency; loaded by SearchProtocolHost.exe.
+    add_library(QSearchablePropertyHandler SHARED
+        src/propertyhandler/QSearchablePropertyHandler.cpp
+        src/propertyhandler/dllmain.cpp
+        src/propertyhandler/exports.def
+    )
+    set_target_properties(QSearchablePropertyHandler PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        PREFIX ""
+    )
+    target_link_libraries(QSearchablePropertyHandler PRIVATE ole32 propsys shlwapi uuid)
+
+    # Standalone installer helper — no Qt dependency; runs elevated for HKLM writes.
+    add_executable(QSearchableInstaller
+        src/installer/QSearchableInstaller.cpp
+    )
+    set_target_properties(QSearchableInstaller PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+    )
+    target_link_libraries(QSearchableInstaller PRIVATE shell32 advapi32)
 elseif(UNIX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     target_sources(QSearchable PRIVATE

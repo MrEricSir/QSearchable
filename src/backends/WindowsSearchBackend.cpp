@@ -59,6 +59,7 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
     fileExtension = QStringLiteral("qs") + QString::number(qHash(appName), 16).left(4);
 
     progId = QStringLiteral("QSearchable.") + appName;
+    clsid = generateClsid();
     windowClassName = QStringLiteral("QSearchable_") + appName + QStringLiteral("_IPC");
 
     setupIpc();
@@ -189,11 +190,89 @@ void WindowsSearchBackend::uninstall()
 
     unregisterCrawlScope();
     unregisterFileType();
+    unregisterPropertyHandler();
     scopeRegistered = false;
 
     QTimer::singleShot(0, this, [this]() {
         emit removalSucceeded();
     });
+}
+
+void WindowsSearchBackend::install()
+{
+    registerPropertyHandler();
+}
+
+bool WindowsSearchBackend::isRelayInstance() const
+{
+    return QCoreApplication::instance()->property("QSearchable_relay").toBool();
+}
+
+QStringList WindowsSearchBackend::installerArguments() const
+{
+    QString appName = QCoreApplication::applicationName();
+    if (appName.isEmpty()) {
+        appName = QStringLiteral("QSearchable");
+    }
+
+    QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    QString dllPath = QDir::toNativeSeparators(
+        QCoreApplication::applicationDirPath()
+        + QStringLiteral("/QSearchablePropertyHandler.dll"));
+
+    QString iconPath = QDir::toNativeSeparators(baseDir + QStringLiteral("/app.ico"));
+
+    QStringList args;
+    args << QStringLiteral("install")
+         << fileExtension << clsid << progId << appName
+         << appPath << dllPath;
+
+    if (QFile::exists(iconPath)) {
+        args << iconPath;
+    }
+
+    return args;
+}
+
+QStringList WindowsSearchBackend::uninstallerArguments() const
+{
+    QString appName = QCoreApplication::applicationName();
+    if (appName.isEmpty()) {
+        appName = QStringLiteral("QSearchable");
+    }
+
+    QStringList args;
+    args << QStringLiteral("uninstall")
+         << fileExtension << clsid << progId << appName;
+
+    return args;
+}
+
+bool WindowsSearchBackend::isInstalled() const
+{
+    std::wstring key = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\"
+                       L"PropertySystem\\PropertyHandlers\\."
+                       + fileExtension.toStdWString();
+
+    HKEY hkey = nullptr;
+    LONG res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, key.c_str(), 0, KEY_READ, &hkey);
+    if (res != ERROR_SUCCESS) {
+        return false;
+    }
+
+    // Check that the value matches our expected CLSID.
+    wchar_t buf[128] = {};
+    DWORD size = sizeof(buf);
+    DWORD type = 0;
+    res = RegQueryValueExW(hkey, nullptr, nullptr, &type,
+                           reinterpret_cast<LPBYTE>(buf), &size);
+    RegCloseKey(hkey);
+
+    if (res != ERROR_SUCCESS || type != REG_SZ) {
+        return false;
+    }
+
+    return QString::fromWCharArray(buf) == clsid;
 }
 
 QString WindowsSearchBackend::domainDir(const QString &domain) const
@@ -285,6 +364,8 @@ void WindowsSearchBackend::registerCrawlScope()
     HRESULT hr = CoCreateInstance(__uuidof(CSearchManager), nullptr, CLSCTX_ALL,
                                  IID_PPV_ARGS(&searchManager));
     if (FAILED(hr)) {
+        qWarning("QSearchable: failed to create ISearchManager (hr=0x%lx)",
+                 static_cast<unsigned long>(hr));
         return;
     }
 
@@ -292,21 +373,34 @@ void WindowsSearchBackend::registerCrawlScope()
     hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
     searchManager->Release();
     if (FAILED(hr)) {
+        qWarning("QSearchable: failed to get SystemIndex catalog (hr=0x%lx)",
+                 static_cast<unsigned long>(hr));
         return;
     }
 
     ISearchCrawlScopeManager *scopeManager = nullptr;
     hr = catalogManager->GetCrawlScopeManager(&scopeManager);
-    catalogManager->Release();
     if (FAILED(hr)) {
+        catalogManager->Release();
+        qWarning("QSearchable: failed to get crawl scope manager (hr=0x%lx)",
+                 static_cast<unsigned long>(hr));
         return;
     }
 
     QString url = QStringLiteral("file:///") + baseDir;
-    scopeManager->AddUserScopeRule(reinterpret_cast<const wchar_t *>(url.utf16()),
-                                   TRUE, TRUE, FALSE);
+    hr = scopeManager->AddUserScopeRule(
+        reinterpret_cast<const wchar_t *>(url.utf16()), TRUE, TRUE, FALSE);
+    if (FAILED(hr)) {
+        qWarning("QSearchable: AddUserScopeRule failed (hr=0x%lx)",
+                 static_cast<unsigned long>(hr));
+    }
     scopeManager->SaveAll();
     scopeManager->Release();
+
+    // Ask the indexer to crawl our directory immediately.
+    catalogManager->ReindexSearchRoot(
+        reinterpret_cast<const wchar_t *>(url.utf16()));
+    catalogManager->Release();
 }
 
 void WindowsSearchBackend::unregisterCrawlScope()
@@ -429,6 +523,117 @@ void WindowsSearchBackend::unregisterFileType()
     }
 
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+}
+
+QString WindowsSearchBackend::generateClsid() const
+{
+    // Generate a deterministic CLSID from the application name so that each
+    // app using QSearchable gets its own COM registration.
+    QString appName = QCoreApplication::applicationName();
+    size_t h1 = qHash(appName, 0x51A3E7B9);
+    size_t h2 = qHash(appName, 0xC4D2F186);
+    return QStringLiteral("{7A3F8B2E-1D4C-4E5A-%1-%2%3}")
+        .arg(static_cast<uint>(h1 & 0xFFFF), 4, 16, QLatin1Char('0'))
+        .arg(static_cast<uint>(h2 & 0xFFFF), 4, 16, QLatin1Char('0'))
+        .arg(static_cast<uint>(h1), 8, 16, QLatin1Char('0'));
+}
+
+static bool runInstallerElevated(const QString &installerPath, const QStringList &args)
+{
+    // Quote each argument and join into a single command-line string.
+    QStringList quoted;
+    for (const QString &arg : args) {
+        quoted << (QStringLiteral("\"") + arg + QStringLiteral("\""));
+    }
+    QString paramString = quoted.join(QLatin1Char(' '));
+
+    SHELLEXECUTEINFOW sei = {};
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.lpVerb = L"runas";
+    sei.lpFile = reinterpret_cast<const wchar_t *>(installerPath.utf16());
+    sei.lpParameters = reinterpret_cast<const wchar_t *>(paramString.utf16());
+    sei.nShow = SW_HIDE;
+
+    if (!ShellExecuteExW(&sei)) {
+        DWORD err = GetLastError();
+        if (err == ERROR_CANCELLED) {
+            qWarning("QSearchable: user cancelled elevation prompt");
+        } else {
+            qWarning("QSearchable: failed to launch installer (error=%lu)", err);
+        }
+        return false;
+    }
+
+    if (sei.hProcess) {
+        WaitForSingleObject(sei.hProcess, 30000);
+        DWORD exitCode = 0;
+        GetExitCodeProcess(sei.hProcess, &exitCode);
+        CloseHandle(sei.hProcess);
+
+        if (exitCode != 0) {
+            qWarning("QSearchable: installer returned error code %lu", exitCode);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void WindowsSearchBackend::registerPropertyHandler()
+{
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString installerPath = QDir::toNativeSeparators(
+        appDir + QStringLiteral("/QSearchableInstaller.exe"));
+
+    if (!QFile::exists(appDir + QStringLiteral("/QSearchableInstaller.exe"))) {
+        qWarning("QSearchable: installer not found at %s", qPrintable(installerPath));
+        return;
+    }
+    if (!QFile::exists(appDir + QStringLiteral("/QSearchablePropertyHandler.dll"))) {
+        qWarning("QSearchable: property handler DLL not found next to application");
+        return;
+    }
+
+    // Save the icon first so the installer can reference it.
+    saveAppIcon();
+
+    if (!runInstallerElevated(installerPath, installerArguments())) {
+        return;
+    }
+
+    // Trigger the indexer to re-crawl our directory so it picks up the
+    // property handler for any files already indexed.
+    ISearchManager *searchManager = nullptr;
+    HRESULT hr = CoCreateInstance(__uuidof(CSearchManager), nullptr, CLSCTX_ALL,
+                                 IID_PPV_ARGS(&searchManager));
+    if (SUCCEEDED(hr)) {
+        ISearchCatalogManager *catalogManager = nullptr;
+        hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
+        if (SUCCEEDED(hr)) {
+            QString url = QStringLiteral("file:///") + baseDir;
+            catalogManager->ReindexSearchRoot(
+                reinterpret_cast<const wchar_t *>(url.utf16()));
+            catalogManager->Release();
+        }
+        searchManager->Release();
+    }
+}
+
+void WindowsSearchBackend::unregisterPropertyHandler()
+{
+    QString installerPath = QDir::toNativeSeparators(
+        QCoreApplication::applicationDirPath()
+        + QStringLiteral("/QSearchableInstaller.exe"));
+
+    if (!QFile::exists(QCoreApplication::applicationDirPath()
+                       + QStringLiteral("/QSearchableInstaller.exe"))) {
+        qWarning("QSearchable: installer not found at %s, cannot unregister",
+                 qPrintable(installerPath));
+        return;
+    }
+
+    runInstallerElevated(installerPath, uninstallerArguments());
 }
 
 QString WindowsSearchBackend::saveAppIcon()
@@ -561,12 +766,23 @@ void WindowsSearchBackend::setupIpc()
     }
 
     if (existing && !targetFile.isEmpty()) {
+        // Transfer foreground activation rights to the existing instance
+        // so it can bring itself to the front after we quit.
+        DWORD targetPid = 0;
+        GetWindowThreadProcessId(existing, &targetPid);
+        if (targetPid != 0) {
+            AllowSetForegroundWindow(targetPid);
+        }
+
         // Send file path to existing instance via WM_COPYDATA.
         QByteArray data = targetFile.toUtf8();
         COPYDATASTRUCT cds = {};
         cds.cbData = static_cast<DWORD>(data.size());
         cds.lpData = data.data();
         SendMessageW(existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+
+        // Mark as relay so the app can skip showing UI.
+        QCoreApplication::instance()->setProperty("QSearchable_relay", true);
 
         // Quit temporary instance when complete.
         QTimer::singleShot(0, []() {

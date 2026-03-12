@@ -32,6 +32,20 @@ target_link_libraries(QSearchableListDemo PRIVATE
     Qt6::Widgets
 )
 
+if(WIN32 AND TARGET QSearchablePropertyHandler)
+    add_dependencies(QSearchableListDemo QSearchablePropertyHandler QSearchableInstaller)
+    add_custom_command(TARGET QSearchableListDemo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:QSearchablePropertyHandler>"
+            "$<TARGET_FILE_DIR:QSearchableListDemo>"
+            || (echo "WARNING: Could not copy QSearchablePropertyHandler.dll — file may be locked by SearchProtocolHost.exe" && exit /b 0)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:QSearchableInstaller>"
+            "$<TARGET_FILE_DIR:QSearchableListDemo>"
+        COMMENT "Copying QSearchablePropertyHandler.dll and QSearchableInstaller.exe"
+    )
+endif()
+
 if(APPLE)
     add_custom_command(TARGET QSearchableListDemo POST_BUILD
         COMMAND codesign --sign - --force --deep "$<TARGET_BUNDLE_DIR:QSearchableListDemo>"
