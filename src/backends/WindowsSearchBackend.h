@@ -26,6 +26,7 @@
 #include "QSearchableIndexBackend.h"
 
 #include <QDir>
+#include <QIcon>
 #include <QString>
 #include <windows.h>
 
@@ -58,6 +59,7 @@ private:
     void unregisterCrawlScope();
     void unregisterFileType();
     QString saveAppIcon();
+    bool writeIcoFile(const QString &path, const QIcon &icon);
 
     void setupIpc();
     void checkPendingActivation();

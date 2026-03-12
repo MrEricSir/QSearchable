@@ -32,12 +32,14 @@
 #include <QIcon>
 #include <QImage>
 #include <QLibraryInfo>
+#include <QPixmap>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTimer>
 
 #include <ShlObj.h>
+#include <shellapi.h>
 #include <objbase.h>
 #include <searchapi.h>
 
@@ -300,7 +302,7 @@ void WindowsSearchBackend::registerCrawlScope()
         return;
     }
 
-    QString url = QStringLiteral("file:///") + QDir::toNativeSeparators(baseDir);
+    QString url = QStringLiteral("file:///") + baseDir;
     scopeManager->AddUserScopeRule(reinterpret_cast<const wchar_t *>(url.utf16()),
                                    TRUE, TRUE, FALSE);
     scopeManager->SaveAll();
@@ -330,7 +332,7 @@ void WindowsSearchBackend::unregisterCrawlScope()
         return;
     }
 
-    QString url = QStringLiteral("file:///") + QDir::toNativeSeparators(baseDir);
+    QString url = QStringLiteral("file:///") + baseDir;
     scopeManager->RemoveScopeRule(reinterpret_cast<const wchar_t *>(url.utf16()));
     scopeManager->SaveAll();
     scopeManager->Release();
@@ -362,7 +364,7 @@ void WindowsSearchBackend::registerFileType()
     {
         QSettings s(classesBase + QStringLiteral(".") + fileExtension, QSettings::NativeFormat);
         s.setValue(QStringLiteral("."), progId);
-        s.setValue(QStringLiteral("Content Type"), QStringLiteral("text/plain"));
+        s.setValue(QStringLiteral("Content Type"), QStringLiteral("application/x-qsearchable"));
         s.setValue(QStringLiteral("PerceivedType"), QStringLiteral("document"));
         s.sync();
     }
@@ -431,26 +433,64 @@ void WindowsSearchBackend::unregisterFileType()
 
 QString WindowsSearchBackend::saveAppIcon()
 {
-    // Unfortunately Qt's .ico file support doesn't handle icons with ultiple
-    // resolutions, so we have to create our icon the hard way.
-
-    QIcon appIcon = QGuiApplication::windowIcon();
-    if (appIcon.isNull()) {
-        return QString();
-    }
-
     QDir().mkpath(baseDir);
     QString icoPath = baseDir + QStringLiteral("/app.ico");
 
+    // Attempt to copy the icon from the exe binary.
+    QString appPath = QCoreApplication::applicationFilePath();
+    HICON hIcons[1] = {};
+    UINT found = ExtractIconExW(
+        reinterpret_cast<const wchar_t *>(appPath.utf16()),
+        0, hIcons, nullptr, 1);
+
+    if (found >= 1 && hIcons[0]) {
+        // Use the exe's embedded icon.
+        QIcon appIcon;
+
+        // Convert HICON to QImage.
+        QPixmap pm = QPixmap::fromImage(QImage::fromHICON(hIcons[0]));
+        if (!pm.isNull()) {
+            appIcon.addPixmap(pm);
+        }
+        DestroyIcon(hIcons[0]);
+
+        // Also try QGuiApplication::windowIcon() which may have more sizes.
+        QIcon windowIcon = QGuiApplication::windowIcon();
+        if (!windowIcon.isNull()) {
+            appIcon = windowIcon;
+        }
+
+        if (!appIcon.isNull()) {
+            if (writeIcoFile(icoPath, appIcon)) {
+                return icoPath;
+            }
+        }
+    }
+
+    // Final fallback: try QGuiApplication::windowIcon() alone.
+    QIcon appIcon = QGuiApplication::windowIcon();
+    if (!appIcon.isNull()) {
+        if (writeIcoFile(icoPath, appIcon)) {
+            return icoPath;
+        }
+    }
+
+    qWarning("QSearchable: could not extract app icon from executable or windowIcon()");
+    return QString();
+}
+
+bool WindowsSearchBackend::writeIcoFile(const QString &path, const QIcon &icon)
+{
     static const int sizes[] = {16, 32, 48, 256};
     QList<QByteArray> pngEntries;
     QList<int> entrySizes;
 
     for (int size : sizes) {
-        QImage img = appIcon.pixmap(size, size).toImage();
+        QImage img = icon.pixmap(size, size).toImage();
         if (img.isNull()) {
             continue;
         }
+
         QByteArray png;
         QBuffer buf(&png);
         buf.open(QIODevice::WriteOnly);
@@ -462,7 +502,7 @@ QString WindowsSearchBackend::saveAppIcon()
     }
 
     if (pngEntries.isEmpty()) {
-        return QString();
+        return false;
     }
 
     QByteArray ico;
@@ -492,14 +532,15 @@ QString WindowsSearchBackend::saveAppIcon()
         ds.writeRawData(png.constData(), png.size());
     }
 
-    QFile file(icoPath);
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(ico);
-        file.close();
-        return icoPath;
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning("QSearchable: failed to write %s: %s",
+                 qPrintable(path), qPrintable(file.errorString()));
+        return false;
     }
-
-    return QString();
+    file.write(ico);
+    file.close();
+    return true;
 }
 
 void WindowsSearchBackend::setupIpc()
