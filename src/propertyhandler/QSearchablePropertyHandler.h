@@ -64,6 +64,7 @@ private:
     std::wstring m_displayName;
     std::wstring m_keywords;
     std::wstring m_contentDescription;
+    std::wstring m_appName;
 };
 
 // Class factory for QSearchablePropertyHandler.

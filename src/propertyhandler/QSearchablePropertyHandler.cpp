@@ -171,14 +171,17 @@ void QSearchablePropertyHandler::parseIniFromStream(IStream *pstream)
         std::wstring key = trim(line.substr(0, eq));
         std::wstring value = trim(line.substr(eq + 1));
 
-        if (_wcsicmp(key.c_str(), L"Title") == 0)
+        if (_wcsicmp(key.c_str(), L"Title") == 0) {
             m_title = value;
-        else if (_wcsicmp(key.c_str(), L"DisplayName") == 0)
+        } else if (_wcsicmp(key.c_str(), L"DisplayName") == 0) {
             m_displayName = value;
-        else if (_wcsicmp(key.c_str(), L"Keywords") == 0)
+        } else if (_wcsicmp(key.c_str(), L"Keywords") == 0) {
             m_keywords = value;
-        else if (_wcsicmp(key.c_str(), L"ContentDescription") == 0)
+        } else if (_wcsicmp(key.c_str(), L"ContentDescription") == 0) {
             m_contentDescription = value;
+        } else if (_wcsicmp(key.c_str(), L"AppName") == 0) {
+            m_appName = value;
+        }
     }
 }
 
@@ -204,12 +207,14 @@ IFACEMETHODIMP QSearchablePropertyHandler::Initialize(IStream *pstream, DWORD /*
 // ---------------------------------------------------------------------------
 
 static const PROPERTYKEY s_propertyKeys[] = {
-    PKEY_ItemNameDisplay,   // 0 - controls the display name in search results
-    PKEY_Title,             // 1
-    PKEY_Keywords,          // 2
-    PKEY_Comment,           // 3
-    PKEY_Kind,              // 4
-    PKEY_Search_Contents,   // 5 - full-text search content for the indexer
+    PKEY_ItemNameDisplay,           // 0 - controls the display name in search results
+    PKEY_Title,                     // 1
+    PKEY_Keywords,                  // 2
+    PKEY_Comment,                   // 3
+    PKEY_Kind,                      // 4
+    PKEY_Search_Contents,           // 5 - full-text search content for the indexer
+    PKEY_ItemFolderPathDisplay,     // 6 - path shown under the result (app name instead of raw path)
+    PKEY_ItemTypeText,              // 7 - type column text (app name instead of file extension)
 };
 
 static const DWORD s_propertyCount = ARRAYSIZE(s_propertyKeys);
@@ -312,6 +317,18 @@ IFACEMETHODIMP QSearchablePropertyHandler::GetValue(REFPROPERTYKEY key, PROPVARI
         }
         if (!content.empty()) {
             return InitPropVariantFromString(content.c_str(), pv);
+        }
+    }
+    else if (IsEqualPropertyKey(key, PKEY_ItemFolderPathDisplay)) {
+        // Show the app name as the "folder" instead of the raw AppData path.
+        if (!m_appName.empty()) {
+            return InitPropVariantFromString(m_appName.c_str(), pv);
+        }
+    }
+    else if (IsEqualPropertyKey(key, PKEY_ItemTypeText)) {
+        // Show the app name as the file type instead of the raw extension.
+        if (!m_appName.empty()) {
+            return InitPropVariantFromString(m_appName.c_str(), pv);
         }
     }
 

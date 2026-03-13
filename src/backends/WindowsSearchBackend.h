@@ -60,10 +60,9 @@ private:
     QString sanitizeTitle(const QString &title) const;
 
     void registerCrawlScope();
-    void registerFileType();
+    void registerAppPaths();
     void registerPropertyHandler();
     void unregisterCrawlScope();
-    void unregisterFileType();
     void unregisterPropertyHandler();
     QString generateClsid() const;
     QString saveAppIcon();

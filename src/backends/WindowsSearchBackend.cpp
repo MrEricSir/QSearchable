@@ -24,6 +24,7 @@
 
 #include <QBuffer>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDataStream>
 #include <QDir>
 #include <QFile>
@@ -56,7 +57,9 @@ WindowsSearchBackend::WindowsSearchBackend(QObject *parent)
 
     baseDir = localAppData + QStringLiteral("/QSearchable/") + appName;
 
-    fileExtension = QStringLiteral("qs") + QString::number(qHash(appName), 16).left(4);
+    QByteArray nameHash = QCryptographicHash::hash(
+        appName.toUtf8(), QCryptographicHash::Sha256).toHex();
+    fileExtension = QStringLiteral("qs") + QString::fromLatin1(nameHash.left(6));
 
     progId = QStringLiteral("QSearchable.") + appName;
     clsid = generateClsid();
@@ -87,7 +90,7 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 
     if (!scopeRegistered && !items.isEmpty()) {
         registerCrawlScope();
-        registerFileType();
+        registerAppPaths();
         scopeRegistered = true;
     }
 
@@ -189,7 +192,6 @@ void WindowsSearchBackend::uninstall()
     }
 
     unregisterCrawlScope();
-    unregisterFileType();
     unregisterPropertyHandler();
     scopeRegistered = false;
 
@@ -322,7 +324,13 @@ void WindowsSearchBackend::writeItemFile(const QString &filePath, const QSearcha
     settings.setValue(QStringLiteral("ContentDescription"), item.contentDescription());
     settings.setValue(QStringLiteral("DisplayName"), item.displayName());
     settings.setValue(QStringLiteral("Keywords"), item.keywords().join(QStringLiteral(", ")));
-    
+
+    QString appName = QCoreApplication::applicationName();
+    if (appName.isEmpty()) {
+        appName = QStringLiteral("QSearchable");
+    }
+    settings.setValue(QStringLiteral("AppName"), appName);
+
     if (item.url().isValid()) {
         settings.setValue(QStringLiteral("URL"), item.url().toString());
     }
@@ -403,6 +411,24 @@ void WindowsSearchBackend::registerCrawlScope()
     catalogManager->Release();
 }
 
+void WindowsSearchBackend::registerAppPaths()
+{
+    // Register under HKCU (no admin needed) so Windows can find the exe
+    // and its dependent DLLs when launching via shell open command.
+    QString nativeAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    QString appFileName = QFileInfo(nativeAppPath).fileName();
+
+    QString key = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
+                  + appFileName;
+    QSettings s(key, QSettings::NativeFormat);
+    s.setValue(QStringLiteral("."), nativeAppPath);
+    s.setValue(QStringLiteral("Path"),
+               QDir::toNativeSeparators(QCoreApplication::applicationDirPath())
+               + QStringLiteral(";")
+               + QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
+    s.sync();
+}
+
 void WindowsSearchBackend::unregisterCrawlScope()
 {
     ISearchManager *searchManager = nullptr;
@@ -432,110 +458,23 @@ void WindowsSearchBackend::unregisterCrawlScope()
     scopeManager->Release();
 }
 
-void WindowsSearchBackend::registerFileType()
-{
-    QString nativeAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-    QString appFileName = QFileInfo(nativeAppPath).fileName();
-    QString classesBase = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\");
-
-    QString appName = QCoreApplication::applicationName();
-    if (appName.isEmpty()) {
-        appName = QStringLiteral("QSearchable");
-    }
-
-    // Set our App Paths key.
-    {
-        QString key = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
-                      + appFileName;
-        QSettings s(key, QSettings::NativeFormat);
-        s.setValue(QStringLiteral("."), nativeAppPath);
-        s.setValue(QStringLiteral("Path"),
-                   QDir::toNativeSeparators(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
-        s.sync();
-    }
-
-    // Register file extension -> progId.
-    {
-        QSettings s(classesBase + QStringLiteral(".") + fileExtension, QSettings::NativeFormat);
-        s.setValue(QStringLiteral("."), progId);
-        s.setValue(QStringLiteral("Content Type"), QStringLiteral("application/x-qsearchable"));
-        s.setValue(QStringLiteral("PerceivedType"), QStringLiteral("document"));
-        s.sync();
-    }
-
-    // Register "friendly" name and hide our search file extension (when possible.)
-    {
-        QSettings s(classesBase + progId, QSettings::NativeFormat);
-        s.setValue(QStringLiteral("."), appName);
-        s.setValue(QStringLiteral("FriendlyTypeName"), appName);
-        s.setValue(QStringLiteral("NeverShowExt"), QStringLiteral(""));
-        s.sync();
-    }
-
-    // Create shell open command.
-    {
-        QSettings s(classesBase + progId + QStringLiteral("\\shell\\open\\command"),
-                    QSettings::NativeFormat);
-        s.setValue(QStringLiteral("."),
-                   QStringLiteral("\"") + nativeAppPath + QStringLiteral("\" \"%1\""));
-        s.sync();
-    }
-
-    // Register DefaultIcon for our search file type.
-    {
-        QSettings s(classesBase + progId + QStringLiteral("\\DefaultIcon"),
-                    QSettings::NativeFormat);
-        QString iconPath = saveAppIcon();
-        if (!iconPath.isEmpty()) {
-            s.setValue(QStringLiteral("."), QDir::toNativeSeparators(iconPath));
-        } else {
-            s.setValue(QStringLiteral("."), nativeAppPath + QStringLiteral(",0"));
-        }
-        s.sync();
-    }
-
-    // Tell Explorer to re-check file associations.
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
-}
-
-void WindowsSearchBackend::unregisterFileType()
-{
-    // Undo everything we did in registerFileType()
-    QString appFileName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
-    QString classesBase = QStringLiteral("HKEY_CURRENT_USER\\Software\\Classes\\");
-
-    {
-        QString key = QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\")
-                      + appFileName;
-        QSettings s(key, QSettings::NativeFormat);
-        s.clear();
-        s.sync();
-    }
-    {
-        QSettings s(classesBase + QStringLiteral(".") + fileExtension, QSettings::NativeFormat);
-        s.clear();
-        s.sync();
-    }
-    {
-        QSettings s(classesBase + progId, QSettings::NativeFormat);
-        s.clear();
-        s.sync();
-    }
-
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
-}
 
 QString WindowsSearchBackend::generateClsid() const
 {
     // Generate a deterministic CLSID from the application name so that each
     // app using QSearchable gets its own COM registration.
+    // Uses SHA-256 (not qHash, which is randomized per-process in Qt 6).
     QString appName = QCoreApplication::applicationName();
-    size_t h1 = qHash(appName, 0x51A3E7B9);
-    size_t h2 = qHash(appName, 0xC4D2F186);
-    return QStringLiteral("{7A3F8B2E-1D4C-4E5A-%1-%2%3}")
-        .arg(static_cast<uint>(h1 & 0xFFFF), 4, 16, QLatin1Char('0'))
-        .arg(static_cast<uint>(h2 & 0xFFFF), 4, 16, QLatin1Char('0'))
-        .arg(static_cast<uint>(h1), 8, 16, QLatin1Char('0'));
+    QByteArray hash = QCryptographicHash::hash(
+        appName.toUtf8(), QCryptographicHash::Sha256).toHex();
+
+    // Format 16 bytes of the hash as a GUID: {8-4-4-4-12}
+    return QStringLiteral("{%1-%2-%3-%4-%5}")
+        .arg(QString::fromLatin1(hash.mid(0, 8)))
+        .arg(QString::fromLatin1(hash.mid(8, 4)))
+        .arg(QString::fromLatin1(hash.mid(12, 4)))
+        .arg(QString::fromLatin1(hash.mid(16, 4)))
+        .arg(QString::fromLatin1(hash.mid(20, 12)));
 }
 
 static bool runInstallerElevated(const QString &installerPath, const QStringList &args)
