@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
 <!-- QSearchableIndex.h -->
-  <meta name="description" content="The QSearchableIndex class indexes application content for the platform's native search provider.">
+  <meta name="description" content="The QSearchableIndex class indexes application content for the platform's desktop search.">
   <title>QSearchableIndex Class | QSearchable 1.0.0</title>
      <link rel="stylesheet" type="text/css" href="style/offline.css" /> </head>
 <body>
@@ -23,7 +23,7 @@
 <div class="sidebar-content" id="sidebar-content"></div></div>
 <h1 class="title" translate="no">QSearchableIndex Class</h1>
 <!-- $$$QSearchableIndex-brief -->
-<p>The QSearchableIndex class indexes application content for the platform's native search provider. <a href="#details">More...</a></p>
+<p>The QSearchableIndex class indexes application content for the platform's desktop search. <a href="#details">More...</a></p>
 <!-- @@@QSearchableIndex -->
 <div class="table"><table class="alignedsummary requisites" translate="no">
 <tr><td class="memItemLeft rightAlign topAlign"> Header:</td><td class="memItemRight bottomAlign"> <code translate="no">#include &lt;QSearchableIndex&gt;</code></td></tr>
@@ -34,11 +34,12 @@
 <h2 id="public-functions">Public Functions</h2>
 <div class="table"><table class="alignedsummary" translate="no">
 <tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#indexItems" translate="no">indexItems</a></b>(const QList&lt;QSearchableItem&gt; &amp;<i>items</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#isInstalled" translate="no">isInstalled</a></b>() const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#isRelayInstance" translate="no">isRelayInstance</a></b>() const</td></tr>
 <tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#isSupported" translate="no">isSupported</a></b>() const</td></tr>
 <tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeAllItems" translate="no">removeAllItems</a></b>()</td></tr>
 <tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeItems" translate="no">removeItems</a></b>(const QStringList &amp;<i>identifiers</i>)</td></tr>
 <tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#removeItemsInDomains" translate="no">removeItemsInDomains</a></b>(const QStringList &amp;<i>domainIdentifiers</i>)</td></tr>
-<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="qsearchableindex.html#uninstall" translate="no">uninstall</a></b>()</td></tr>
 </table></div>
 <h2 id="signals">Signals</h2>
 <div class="table"><table class="alignedsummary" translate="no">
@@ -61,7 +62,7 @@
 <li><b>Linux (GNOME Shell)</b>: GNOME Tracker</li>
 <li><b>Linux (KDE Plasma)</b>: KRunner</li>
 </ul>
-<p>On unsupported platforms a no-op backend is used and <a href="qsearchableindex.html#isSupported" translate="no">isSupported</a>() returns <code translate="no">false</code>.</p>
+<p>Check if the current platform is supported with <a href="qsearchableindex.html#isSupported" translate="no">isSupported</a>()</p>
 <p>QSearchableIndex is a singleton. Use <a href="qsearchableindex.html#Get" translate="no">Get</a>() to obtain the instance.</p>
 <h3 id="example">Example</h3>
 <pre class="cpp" translate="no"><span class="type"><a href="qsearchableitem.html" translate="no">QSearchableItem</a></span> item(<span class="string">&quot;contact-42&quot;</span>);
@@ -94,6 +95,16 @@ item<span class="operator">.</span>setContentDescription(<span class="string">&q
 <h3 class="fn" translate="no" id="indexingSucceeded"><code class="details extra" translate="no">[signal]</code> <span class="type">void</span> QSearchableIndex::<span class="name">indexingSucceeded</span>(<span class="type">int</span> <i>count</i>)</h3>
 <p>Emitted after <a href="qsearchableindex.html#indexItems" translate="no">indexItems</a>() completes successfully. <i translate="no">count</i> is the number of items that were indexed.</p>
 <!-- @@@indexingSucceeded -->
+<!-- $$$isInstalled[overload1]$$$isInstalled -->
+<h3 class="fn" translate="no" id="isInstalled"><span class="type">bool</span> QSearchableIndex::<span class="name">isInstalled</span>() const</h3>
+<p>On Windows: Returns <code translate="no">true</code> if the installer has been run successfully, otherwise returns <code translate="no">false</code>.</p>
+<p>Returns <code translate="no">true</code> on all other platforms.</p>
+<!-- @@@isInstalled -->
+<!-- $$$isRelayInstance[overload1]$$$isRelayInstance -->
+<h3 class="fn" translate="no" id="isRelayInstance"><span class="type">bool</span> QSearchableIndex::<span class="name">isRelayInstance</span>() const</h3>
+<p>Returns <code translate="no">true</code> if this process was launched to relay a search-result activation to an already-running instance.</p>
+<p>When this returns <code translate="no">true</code> the application should skip showing its main window &mdash; the process will quit automatically after delivering the activation to the existing instance.</p>
+<!-- @@@isRelayInstance -->
 <!-- $$$isSupported[overload1]$$$isSupported -->
 <h3 class="fn" translate="no" id="isSupported"><span class="type">bool</span> QSearchableIndex::<span class="name">isSupported</span>() const</h3>
 <p>Returns <code translate="no">true</code> if the current platform's search backend is supported.</p>
@@ -114,10 +125,6 @@ item<span class="operator">.</span>setContentDescription(<span class="string">&q
 <h3 class="fn" translate="no" id="removeItemsInDomains"><span class="type">void</span> QSearchableIndex::<span class="name">removeItemsInDomains</span>(const <span class="type">QStringList</span> &amp;<i>domainIdentifiers</i>)</h3>
 <p>Removes all items whose domain identifier is in <i translate="no">domainIdentifiers</i>.</p>
 <!-- @@@removeItemsInDomains -->
-<!-- $$$uninstall[overload1]$$$uninstall -->
-<h3 class="fn" translate="no" id="uninstall"><span class="type">void</span> QSearchableIndex::<span class="name">uninstall</span>()</h3>
-<p>Uninstalls all traces of the search index and related artifacts. Emits <a href="qsearchableindex.html#removalSucceeded" translate="no">removalSucceeded</a>() when complete.</p>
-<!-- @@@uninstall -->
 </div>
 </body>
 </html>
