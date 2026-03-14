@@ -99,7 +99,6 @@ public:
     void removeItems(const QStringList &identifiers) override;
     void removeItemsInDomains(const QStringList &domainIdentifiers) override;
     void removeAllItems() override;
-    void uninstall() override;
 
     // D-Bus krunner1 methods (called by the adaptor)
     QList<KRunnerAction> actions();

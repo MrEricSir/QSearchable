@@ -3,11 +3,19 @@
 #include "QSearchableIndex.h"
 #include "QSearchableItem.h"
 
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <shellapi.h>
+#endif
 
 ListDemoWindow::ListDemoWindow(QWidget *parent)
     : QWidget(parent)
@@ -18,6 +26,9 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
     auto *mainLayout = new QVBoxLayout(this);
 
     // Install / uninstall bar at the top.
+    // In a real application, registration would be handled by the system
+    // installer (MSI, NSIS, etc.) rather than from within the app itself.
+    // This demo invokes QSearchableInstaller.exe directly for convenience.
     auto *installBar = new QHBoxLayout;
     installButton = new QPushButton("Install");
     uninstallButton = new QPushButton("Uninstall");
@@ -27,15 +38,24 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     connect(installButton, &QPushButton::clicked, this, [this]() {
         statusLabel->setText("Installing…");
-        QSearchableIndex::Get()->install();
+        if (!runInstaller("install")) {
+            statusLabel->setText("Install cancelled or failed");
+            return;
+        }
         updateInstallButtons();
-        statusLabel->setText("Installed");
+        statusLabel->setText(QSearchableIndex::Get()->isInstalled()
+                             ? "Installed" : "Install failed");
     });
     connect(uninstallButton, &QPushButton::clicked, this, [this]() {
         statusLabel->setText("Uninstalling…");
-        QSearchableIndex::Get()->uninstall();
+        if (!runInstaller("uninstall")) {
+            statusLabel->setText("Uninstall cancelled or failed");
+            return;
+        }
+        QSearchableIndex::Get()->removeAllItems();
         updateInstallButtons();
-        statusLabel->setText("Uninstalled");
+        statusLabel->setText(!QSearchableIndex::Get()->isInstalled()
+                             ? "Uninstalled" : "Uninstall failed");
     });
 
     // Description label.
@@ -224,4 +244,60 @@ void ListDemoWindow::updateInstallButtons()
     bool installed = QSearchableIndex::Get()->isInstalled();
     installButton->setEnabled(!installed);
     uninstallButton->setEnabled(installed);
+}
+
+bool ListDemoWindow::runInstaller(const QString &mode)
+{
+#ifdef Q_OS_WIN
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString installerPath = QDir::toNativeSeparators(
+        appDir + QStringLiteral("/QSearchableInstaller.exe"));
+    QString exePath = QDir::toNativeSeparators(
+        QCoreApplication::applicationFilePath());
+
+    if (!QFile::exists(installerPath)) {
+        statusLabel->setText(QStringLiteral("Error: installer not found at %1").arg(installerPath));
+        return false;
+    }
+
+    QString params = QStringLiteral("\"%1\" \"%2\"").arg(mode, exePath);
+
+    SHELLEXECUTEINFOW sei = {};
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.lpVerb = L"runas";
+    sei.lpFile = reinterpret_cast<const wchar_t *>(installerPath.utf16());
+    sei.lpParameters = reinterpret_cast<const wchar_t *>(params.utf16());
+    sei.nShow = SW_HIDE;
+
+    if (!ShellExecuteExW(&sei)) {
+        statusLabel->setText(QStringLiteral("Error: ShellExecuteExW failed (%1)")
+                             .arg(GetLastError()));
+        return false;
+    }
+
+    if (sei.hProcess) {
+        DWORD waitResult = WaitForSingleObject(sei.hProcess, 30000);
+        DWORD exitCode = 1;
+        GetExitCodeProcess(sei.hProcess, &exitCode);
+        CloseHandle(sei.hProcess);
+
+        if (waitResult == WAIT_TIMEOUT) {
+            statusLabel->setText("Error: installer timed out");
+            return false;
+        }
+        if (exitCode != 0) {
+            statusLabel->setText(QStringLiteral("Error: installer exited with code %1")
+                                 .arg(exitCode));
+            return false;
+        }
+        return true;
+    }
+
+    statusLabel->setText("Error: no process handle returned");
+    return false;
+#else
+    Q_UNUSED(mode);
+    return true;
+#endif
 }

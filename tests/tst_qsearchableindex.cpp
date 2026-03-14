@@ -43,7 +43,6 @@ private slots:
     void removeItemsEmitsSucceeded();
     void removeItemsInDomainsEmitsSucceeded();
     void removeAllItemsEmitsSucceeded();
-    void uninstallEmitsSucceeded();
 };
 
 void TestQSearchableIndex::itemConstruction()
@@ -206,17 +205,6 @@ void TestQSearchableIndex::removeAllItemsEmitsSucceeded()
     QSignalSpy spy(index, &QSearchableIndex::removalSucceeded);
 
     index->removeAllItems();
-
-    QVERIFY(spy.wait(5000));
-    QCOMPARE(spy.count(), 1);
-}
-
-void TestQSearchableIndex::uninstallEmitsSucceeded()
-{
-    QSearchableIndex *index = QSearchableIndex::Get();
-    QSignalSpy spy(index, &QSearchableIndex::removalSucceeded);
-
-    index->uninstall();
 
     QVERIFY(spy.wait(5000));
     QCOMPARE(spy.count(), 1);

@@ -37,12 +37,11 @@ if(APPLE)
         "-framework UniformTypeIdentifiers"
     )
 elseif(WIN32)
-    find_package(Qt6 REQUIRED COMPONENTS Gui)
     target_sources(QSearchable PRIVATE
         src/backends/WindowsSearchBackend.cpp
         src/backends/WindowsSearchBackend.h
     )
-    target_link_libraries(QSearchable PRIVATE Qt6::Gui shell32 ole32 uuid user32)
+    target_link_libraries(QSearchable PRIVATE shell32 advapi32 user32)
 
     # Property handler DLL — no Qt dependency; loaded by SearchProtocolHost.exe.
     add_library(QSearchablePropertyHandler SHARED
@@ -67,7 +66,7 @@ elseif(WIN32)
         AUTOUIC OFF
         AUTORCC OFF
     )
-    target_link_libraries(QSearchableInstaller PRIVATE shell32 advapi32)
+    target_link_libraries(QSearchableInstaller PRIVATE shell32 advapi32 bcrypt ole32 uuid user32 gdi32)
 elseif(UNIX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     target_sources(QSearchable PRIVATE

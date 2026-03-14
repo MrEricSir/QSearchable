@@ -45,7 +45,6 @@ public:
     void removeItems(const QStringList &identifiers) override;
     void removeItemsInDomains(const QStringList &domainIdentifiers) override;
     void removeAllItems() override;
-    void uninstall() override;
 
     // D-Bus SearchProvider2 methods (called by the adaptor)
     QStringList getInitialResultSet(const QStringList &terms);

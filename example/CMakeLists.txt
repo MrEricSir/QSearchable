@@ -44,6 +44,16 @@ if(WIN32 AND TARGET QSearchablePropertyHandler)
             "$<TARGET_FILE_DIR:QSearchableListDemo>"
         COMMENT "Copying QSearchablePropertyHandler.dll and QSearchableInstaller.exe"
     )
+
+    # Deploy Qt runtime DLLs so the demo can be launched from Explorer
+    # (e.g., when opening a search result via the file association).
+    find_program(WINDEPLOYQT windeployqt HINTS "${Qt6_DIR}/../../../bin")
+    if(WINDEPLOYQT)
+        add_custom_command(TARGET QSearchableListDemo POST_BUILD
+            COMMAND "${WINDEPLOYQT}" "$<TARGET_FILE:QSearchableListDemo>"
+            COMMENT "Running windeployqt"
+        )
+    endif()
 endif()
 
 if(APPLE)

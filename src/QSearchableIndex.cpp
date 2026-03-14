@@ -104,27 +104,8 @@ void QSearchableIndex::removeAllItems()
     backend->removeAllItems();
 }
 
-void QSearchableIndex::uninstall()
-{
-    backend->uninstall();
-}
-
 bool QSearchableIndex::isInstalled() const
 {
     return backend->isInstalled();
 }
 
-QStringList QSearchableIndex::installerArguments() const
-{
-    return backend->installerArguments();
-}
-
-QStringList QSearchableIndex::uninstallerArguments() const
-{
-    return backend->uninstallerArguments();
-}
-
-void QSearchableIndex::install()
-{
-    backend->install();
-}

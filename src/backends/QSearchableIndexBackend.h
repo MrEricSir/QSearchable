@@ -50,13 +50,11 @@ public:
     virtual void removeItemsInDomains(const QStringList &domainIdentifiers) = 0;
     virtual void removeAllItems() = 0;
 
-    virtual void uninstall() = 0;
-
-    virtual void install() {};
+    // Returns true if system-level registration has been performed.
     virtual bool isInstalled() const { return true; }
+
+    // Returns true if this process is a relay that should skip showing UI.
     virtual bool isRelayInstance() const { return false; }
-    virtual QStringList installerArguments() const { return {}; }
-    virtual QStringList uninstallerArguments() const { return {}; }
 
 signals:
     void indexingSucceeded(int count);

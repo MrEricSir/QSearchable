@@ -132,10 +132,6 @@ void KRunnerBackend::removeAllItems()
     });
 }
 
-void KRunnerBackend::uninstall()
-{
-    removeAllItems();
-}
 
 QList<KRunnerAction> KRunnerBackend::actions()
 {

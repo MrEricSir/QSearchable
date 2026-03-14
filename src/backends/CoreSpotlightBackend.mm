@@ -209,7 +209,3 @@ void CoreSpotlightBackend::removeAllItems()
     }];
 }
 
-void CoreSpotlightBackend::uninstall()
-{
-    removeAllItems();
-}

@@ -26,7 +26,6 @@
 #include "QSearchableIndexBackend.h"
 
 #include <QDir>
-#include <QIcon>
 #include <QString>
 #include <windows.h>
 
@@ -44,12 +43,8 @@ public:
     void removeItems(const QStringList &identifiers) override;
     void removeItemsInDomains(const QStringList &domainIdentifiers) override;
     void removeAllItems() override;
-    void uninstall() override;
-    void install() override;
     bool isInstalled() const override;
     bool isRelayInstance() const override;
-    QStringList installerArguments() const override;
-    QStringList uninstallerArguments() const override;
 
 private:
     QString domainDir(const QString &domain) const;
@@ -59,14 +54,7 @@ private:
     QString parseIdFromFile(const QString &filePath) const;
     QString sanitizeTitle(const QString &title) const;
 
-    void registerCrawlScope();
-    void registerAppPaths();
-    void registerPropertyHandler();
-    void unregisterCrawlScope();
-    void unregisterPropertyHandler();
     QString generateClsid() const;
-    QString saveAppIcon();
-    bool writeIcoFile(const QString &path, const QIcon &icon);
 
     void setupIpc();
     void checkPendingActivation();
@@ -74,12 +62,11 @@ private:
 
     static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+    QString appName;
     QString baseDir;
     QString fileExtension;
-    QString progId;
     QString clsid;
     QString windowClassName;
-    bool scopeRegistered = false;
     HWND ipcWindow = nullptr;
 };
 

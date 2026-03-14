@@ -29,6 +29,7 @@ private:
     void indexAllItems();
     void clearHighlight();
     void updateInstallButtons();
+    bool runInstaller(const QString &mode);
 
     QVBoxLayout *rowLayout;
     QLabel *statusLabel;
