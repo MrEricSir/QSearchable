@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSettings>
 #include <QVBoxLayout>
 
 #ifdef Q_OS_WIN
@@ -27,7 +28,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     // Windows: Install / Uninstall buttons.
     // In a real application, registration would be handled by the installer (MSI,
-    // NSIS, etc.) but we include this for demonstration purposes.
+    // NSIS, etc.) but we include this here for demonstration purposes.
 #ifdef Q_OS_WIN
     auto *installBar = new QHBoxLayout;
     installButton = new QPushButton("Install");
@@ -86,7 +87,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
     bottomBar->addWidget(statusLabel, 1);
     mainLayout->addLayout(bottomBar);
 
-    connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); });
+    connect(addButton, &QPushButton::clicked, this, [this]() { addItem(); saveItems(); });
 
     auto *index = QSearchableIndex::Get();
     connect(index, &QSearchableIndex::indexingSucceeded,
@@ -98,10 +99,8 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     updateInstallButtons();
 
-    // Pre-populate with sample items.
-    addItem("Alpaca");
-    addItem("Pangolin");
-    addItem("Axolotl");
+    // Restore items from the previous session, or pre-populate with samples.
+    loadItems();
 
     indexAllItems();
 }
@@ -122,6 +121,7 @@ void ListDemoWindow::addItem(const QString &text)
 
     connect(lineEdit, &QLineEdit::editingFinished, this, [this, id]() {
         onEditingFinished(id);
+        saveItems();
     });
 
     connect(lineEdit, &QLineEdit::textEdited, this, [this, lineEdit]() {
@@ -150,6 +150,7 @@ void ListDemoWindow::removeItem(int id)
     }
 
     items.remove(id);
+    saveItems();
 
     QString identifier = QStringLiteral("test-") + QString::number(id);
     QSearchableIndex::Get()->removeItems({identifier});
@@ -237,6 +238,82 @@ void ListDemoWindow::clearHighlight()
     if (highlightedItem) {
         highlightedItem->setStyleSheet(QString());
         highlightedItem = nullptr;
+    }
+}
+
+void ListDemoWindow::saveItems()
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("ListDemo"));
+    settings.remove(QString()); // clear the group
+
+    QStringList entries;
+    for (auto it = items.constBegin(); it != items.constEnd(); ++it) {
+        entries.append(QStringLiteral("%1=%2").arg(it.key()).arg(it.value()->text()));
+    }
+
+    settings.setValue(QStringLiteral("items"), entries);
+    settings.setValue(QStringLiteral("nextId"), nextId);
+    settings.endGroup();
+}
+
+void ListDemoWindow::loadItems()
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("ListDemo"));
+
+    QStringList entries = settings.value(QStringLiteral("items")).toStringList();
+    nextId = settings.value(QStringLiteral("nextId"), 0).toInt();
+    settings.endGroup();
+
+    if (entries.isEmpty()) {
+        // First run — pre-populate with sample items.
+        addItem(QStringLiteral("Alpaca"));
+        addItem(QStringLiteral("Pangolin"));
+        addItem(QStringLiteral("Axolotl"));
+        saveItems();
+        return;
+    }
+
+    for (const QString &entry : entries) {
+        int eq = entry.indexOf(QLatin1Char('='));
+        if (eq < 0) continue;
+
+        int id = entry.left(eq).toInt();
+        QString text = entry.mid(eq + 1);
+
+        auto *row = new QHBoxLayout;
+        auto *lineEdit = new QLineEdit(text);
+        auto *removeButton = new QPushButton(QStringLiteral("-"));
+
+        row->addWidget(lineEdit);
+        row->addWidget(removeButton);
+        rowLayout->addLayout(row);
+
+        items.insert(id, lineEdit);
+        if (id >= nextId) nextId = id + 1;
+
+        connect(lineEdit, &QLineEdit::editingFinished, this, [this, id]() {
+            onEditingFinished(id);
+            saveItems();
+        });
+
+        connect(lineEdit, &QLineEdit::textEdited, this, [this, lineEdit]() {
+            if (lineEdit == highlightedItem) {
+                clearHighlight();
+            }
+        });
+
+        connect(removeButton, &QPushButton::clicked, this, [this, id, row]() {
+            removeItem(id);
+            while (row->count() > 0) {
+                auto *item = row->takeAt(0);
+                delete item->widget();
+                delete item;
+            }
+            rowLayout->removeItem(row);
+            delete row;
+        });
     }
 }
 

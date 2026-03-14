@@ -59,7 +59,7 @@ elseif(WIN32)
 
     # Standalone installer helper — no Qt dependency; runs elevated for HKLM writes.
     add_executable(QSearchableWindowsInstaller
-        src/installer/QSearchableInstaller.cpp
+        src/installer/QSearchableWindowsInstaller.cpp
     )
     set_target_properties(QSearchableWindowsInstaller PROPERTIES
         AUTOMOC OFF

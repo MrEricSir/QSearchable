@@ -30,6 +30,8 @@ private:
     void clearHighlight();
     void updateInstallButtons();
     bool runInstaller(const QString &mode);
+    void saveItems();
+    void loadItems();
 
     QVBoxLayout *rowLayout;
     QLabel *statusLabel;

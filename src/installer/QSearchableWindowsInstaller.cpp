@@ -28,8 +28,8 @@
 // from the application executable path. The installer only needs the exe path:
 //
 // Usage:
-//   QSearchableInstaller.exe install   <exepath>
-//   QSearchableInstaller.exe uninstall <exepath>
+//   QSearchableWindowsInstaller.exe install   <exepath>
+//   QSearchableWindowsInstaller.exe uninstall <exepath>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -396,7 +396,7 @@ static bool registerCrawlScope(const std::wstring &baseDir)
     HRESULT hr = CoCreateInstance(__uuidof(CSearchManager), nullptr, CLSCTX_ALL,
                                  IID_PPV_ARGS(&searchManager));
     if (FAILED(hr)) {
-        fprintf(stderr, "QSearchableInstaller: failed to create ISearchManager (hr=0x%lx)\n",
+        fprintf(stderr, "QSearchableWindowsInstaller: failed to create ISearchManager (hr=0x%lx)\n",
                 static_cast<unsigned long>(hr));
         CoUninitialize();
         return false;
@@ -406,7 +406,7 @@ static bool registerCrawlScope(const std::wstring &baseDir)
     hr = searchManager->GetCatalog(L"SystemIndex", &catalogManager);
     searchManager->Release();
     if (FAILED(hr)) {
-        fprintf(stderr, "QSearchableInstaller: failed to get SystemIndex catalog (hr=0x%lx)\n",
+        fprintf(stderr, "QSearchableWindowsInstaller: failed to get SystemIndex catalog (hr=0x%lx)\n",
                 static_cast<unsigned long>(hr));
         CoUninitialize();
         return false;
@@ -416,7 +416,7 @@ static bool registerCrawlScope(const std::wstring &baseDir)
     hr = catalogManager->GetCrawlScopeManager(&scopeManager);
     if (FAILED(hr)) {
         catalogManager->Release();
-        fprintf(stderr, "QSearchableInstaller: failed to get crawl scope manager (hr=0x%lx)\n",
+        fprintf(stderr, "QSearchableWindowsInstaller: failed to get crawl scope manager (hr=0x%lx)\n",
                 static_cast<unsigned long>(hr));
         CoUninitialize();
         return false;
@@ -425,7 +425,7 @@ static bool registerCrawlScope(const std::wstring &baseDir)
     std::wstring url = L"file:///" + baseDir;
     hr = scopeManager->AddUserScopeRule(url.c_str(), TRUE, TRUE, FALSE);
     if (FAILED(hr)) {
-        fprintf(stderr, "QSearchableInstaller: AddUserScopeRule failed (hr=0x%lx)\n",
+        fprintf(stderr, "QSearchableWindowsInstaller: AddUserScopeRule failed (hr=0x%lx)\n",
                 static_cast<unsigned long>(hr));
     }
     scopeManager->SaveAll();
@@ -589,12 +589,12 @@ static int doInstall(const std::wstring &ext, const std::wstring &clsid,
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 
     if (!ok) {
-        fprintf(stderr, "QSearchableInstaller: one or more registry writes failed.\n");
+        fprintf(stderr, "QSearchableWindowsInstaller: one or more registry writes failed.\n");
         fprintf(stderr, "Make sure this process is running with admin privileges.\n");
         return 1;
     }
 
-    printf("QSearchableInstaller: install succeeded.\n");
+    printf("QSearchableWindowsInstaller: install succeeded.\n");
     return 0;
 }
 
@@ -624,12 +624,12 @@ static int doUninstall(const std::wstring &ext, const std::wstring &clsid,
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 
     if (firstErr != 0) {
-        fprintf(stderr, "QSearchableInstaller: uninstall failed (Windows error %d).\n",
+        fprintf(stderr, "QSearchableWindowsInstaller: uninstall failed (Windows error %d).\n",
                 firstErr);
         return firstErr;
     }
 
-    printf("QSearchableInstaller: uninstall succeeded.\n");
+    printf("QSearchableWindowsInstaller: uninstall succeeded.\n");
     return 0;
 }
 
@@ -641,8 +641,8 @@ static void printUsage()
 {
     fprintf(stderr,
             "Usage:\n"
-            "  QSearchableInstaller install   <exepath>\n"
-            "  QSearchableInstaller uninstall <exepath>\n");
+            "  QSearchableWindowsInstaller install   <exepath>\n"
+            "  QSearchableWindowsInstaller uninstall <exepath>\n");
 }
 
 int wmain(int argc, wchar_t *argv[])
@@ -658,13 +658,13 @@ int wmain(int argc, wchar_t *argv[])
     // Derive all identifiers from the exe path.
     std::wstring appName = extractAppName(exePath);
     if (appName.empty()) {
-        fprintf(stderr, "QSearchableInstaller: could not determine app name from path.\n");
+        fprintf(stderr, "QSearchableWindowsInstaller: could not determine app name from path.\n");
         return 1;
     }
 
     std::string hexHash = computeSha256Hex(appName);
     if (hexHash.size() < 32) {
-        fprintf(stderr, "QSearchableInstaller: SHA-256 computation failed.\n");
+        fprintf(stderr, "QSearchableWindowsInstaller: SHA-256 computation failed.\n");
         return 1;
     }
 
