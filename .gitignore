@@ -7,4 +7,3 @@ build/
 *.o
 CMakeUserPresets.json
 build-*/
-cmake/
