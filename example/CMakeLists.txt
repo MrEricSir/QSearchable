@@ -33,16 +33,16 @@ target_link_libraries(QSearchableListDemo PRIVATE
 )
 
 if(WIN32 AND TARGET QSearchablePropertyHandler)
-    add_dependencies(QSearchableListDemo QSearchablePropertyHandler QSearchableInstaller)
+    add_dependencies(QSearchableListDemo QSearchablePropertyHandler QSearchableWindowsInstaller)
     add_custom_command(TARGET QSearchableListDemo POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:QSearchablePropertyHandler>"
             "$<TARGET_FILE_DIR:QSearchableListDemo>"
             || (echo "WARNING: Could not copy QSearchablePropertyHandler.dll — file may be locked by SearchProtocolHost.exe" && exit /b 0)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:QSearchableInstaller>"
+            "$<TARGET_FILE:QSearchableWindowsInstaller>"
             "$<TARGET_FILE_DIR:QSearchableListDemo>"
-        COMMENT "Copying QSearchablePropertyHandler.dll and QSearchableInstaller.exe"
+        COMMENT "Copying QSearchablePropertyHandler.dll and QSearchableWindowsInstaller.exe"
     )
 
     # Deploy Qt runtime DLLs so the demo can be launched from Explorer

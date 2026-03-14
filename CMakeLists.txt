@@ -58,15 +58,15 @@ elseif(WIN32)
     target_link_libraries(QSearchablePropertyHandler PRIVATE ole32 propsys shlwapi uuid)
 
     # Standalone installer helper — no Qt dependency; runs elevated for HKLM writes.
-    add_executable(QSearchableInstaller
+    add_executable(QSearchableWindowsInstaller
         src/installer/QSearchableInstaller.cpp
     )
-    set_target_properties(QSearchableInstaller PROPERTIES
+    set_target_properties(QSearchableWindowsInstaller PROPERTIES
         AUTOMOC OFF
         AUTOUIC OFF
         AUTORCC OFF
     )
-    target_link_libraries(QSearchableInstaller PRIVATE shell32 advapi32 bcrypt ole32 uuid user32 gdi32)
+    target_link_libraries(QSearchableWindowsInstaller PRIVATE shell32 advapi32 bcrypt ole32 uuid user32 gdi32)
 elseif(UNIX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     target_sources(QSearchable PRIVATE

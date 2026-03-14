@@ -25,10 +25,10 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     auto *mainLayout = new QVBoxLayout(this);
 
-    // Install / uninstall bar at the top.
-    // In a real application, registration would be handled by the system
-    // installer (MSI, NSIS, etc.) rather than from within the app itself.
-    // This demo invokes QSearchableInstaller.exe directly for convenience.
+    // Windows: Install / Uninstall buttons.
+    // In a real application, registration would be handled by the installer (MSI,
+    // NSIS, etc.) but we include this for demonstration purposes.
+#ifdef Q_OS_WIN
     auto *installBar = new QHBoxLayout;
     installButton = new QPushButton("Install");
     uninstallButton = new QPushButton("Uninstall");
@@ -57,6 +57,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
         statusLabel->setText(!QSearchableIndex::Get()->isInstalled()
                              ? "Uninstalled" : "Uninstall failed");
     });
+#endif
 
     // Description label.
     auto *description = new QLabel(
@@ -241,9 +242,11 @@ void ListDemoWindow::clearHighlight()
 
 void ListDemoWindow::updateInstallButtons()
 {
+#ifdef Q_OS_WIN
     bool installed = QSearchableIndex::Get()->isInstalled();
     installButton->setEnabled(!installed);
     uninstallButton->setEnabled(installed);
+#endif
 }
 
 bool ListDemoWindow::runInstaller(const QString &mode)
@@ -251,7 +254,7 @@ bool ListDemoWindow::runInstaller(const QString &mode)
 #ifdef Q_OS_WIN
     QString appDir = QCoreApplication::applicationDirPath();
     QString installerPath = QDir::toNativeSeparators(
-        appDir + QStringLiteral("/QSearchableInstaller.exe"));
+        appDir + QStringLiteral("/QSearchableWindowsInstaller.exe"));
     QString exePath = QDir::toNativeSeparators(
         QCoreApplication::applicationFilePath());
 
