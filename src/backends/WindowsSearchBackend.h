@@ -50,7 +50,7 @@ private:
     QString domainDir(const QString &domain) const;
     QString itemFilePath(const QString &domain, const QSearchableItem &item) const;
     QString findFileForId(const QString &domain, const QString &id) const;
-    void writeItemFile(const QString &filePath, const QSearchableItem &item);
+    bool writeItemFile(const QString &filePath, const QSearchableItem &item);
     QString parseIdFromFile(const QString &filePath) const;
     QString sanitizeTitle(const QString &title) const;
 

@@ -62,7 +62,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     // Description label.
     auto *description = new QLabel(
-        "Items in this list are indexed for your platform's search provider: "
+        "Items in this list are indexed for your platform's desktop search: "
 #ifdef Q_OS_MACOS
         "Spotlight"
 #elif defined(Q_OS_WIN)
@@ -99,7 +99,7 @@ ListDemoWindow::ListDemoWindow(QWidget *parent)
 
     updateInstallButtons();
 
-    // Restore items from the previous session, or pre-populate with samples.
+    // Restore items from the previous session. If none, or pre-populate with samples.
     loadItems();
 
     indexAllItems();
@@ -141,6 +141,8 @@ void ListDemoWindow::addItem(const QString &text)
         rowLayout->removeItem(row);
         delete row;
     });
+
+    lineEdit->setFocus();
 }
 
 void ListDemoWindow::removeItem(int id)
@@ -267,10 +269,10 @@ void ListDemoWindow::loadItems()
     settings.endGroup();
 
     if (entries.isEmpty()) {
-        // First run — pre-populate with sample items.
-        addItem(QStringLiteral("Alpaca"));
-        addItem(QStringLiteral("Pangolin"));
-        addItem(QStringLiteral("Axolotl"));
+        // Pre-populate with sample list.
+        addItem(QStringLiteral("Alpaca Nebula"));
+        addItem(QStringLiteral("Pangolin Planet"));
+        addItem(QStringLiteral("Axolotl Worlds"));
         saveItems();
         return;
     }

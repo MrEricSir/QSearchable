@@ -8,6 +8,15 @@ For full details see [the documentation.](https://mrericsir.github.io/QSearchabl
 
 This library was originally developed for the [Fang newsreader](https://github.com/MrEricSir/Fang).
 
+## Platform Support
+
+| Platform | Desktop Search Provider |
+|---|---|
+| macOS | Spotlight |
+| Windows | Windows Search |
+| Linux KDE | KRunner |
+| Linux GNOME | GNOME Shell Search |
+
 ## Quick Start
 
 ```cpp
@@ -44,7 +53,7 @@ The most straightforward way to include QSearchable is with git submodule.
 In the root directory of your existing project's git repository:
 
 ```bash
-git submodule add git@github.com:MrEricSir/QSearchable.git external/QSearchable
+git submodule add https://github.com/MrEricSir/QSearchable.git external/QSearchable
 git add .gitmodules
 git commit -m "Add QSearchable submodule"
 ```
@@ -77,7 +86,9 @@ The example app will be in the build folder; run it on MacOS with:
 open ./build/example/QSearchableListDemo.app
 ```
 
-## Platform Note for MacOS
+## Platform Notes
+
+### MacOS
 
 **Important:** Read the following carefully as no errors will be surfaced if you skip these steps.
 
@@ -90,3 +101,22 @@ codesign -s - --force --deep YourApp.app
 ```
 
 For distribution use your Developer ID certificate.
+
+### Windows
+
+Windows requires an installation step that should be run from your application's installer. It requires elevation.
+
+To install, run:
+```bash
+QSearchableWindowsInstaller.exe install \path\to\MyApp.exe
+```
+
+Likewise, uninstall with:
+```bash
+QSearchableWindowsInstaller.exe uninstall \path\to\MyApp.exe
+```
+
+## Contributions
+
+Contributions are welcome! Please start by [filing a ticket](https://github.com/MrEricSir/QSearchable/issues)
+so we can track the issue.

@@ -47,7 +47,7 @@ class QSearchableIndexBackend;
     \class QSearchableIndex
     \inmodule QSearchable
     \brief The QSearchableIndex class indexes application content for
-    the platform's native search provider.
+    the platform's desktop search.
 
     The following platforms are supported:
 

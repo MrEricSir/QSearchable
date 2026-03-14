@@ -24,6 +24,7 @@
 
 #include <QCoreApplication>
 #include <QDBusConnection>
+#include <QDBusError>
 #include <QDBusMessage>
 #include <QDBusMetaType>
 #include <QTimer>
@@ -210,16 +211,28 @@ void GnomeSearchBackend::registerOnDBus()
     }
 
     QDBusConnection bus = QDBusConnection::sessionBus();
-    if (!bus.isConnected())
+    if (!bus.isConnected()) {
+        QTimer::singleShot(0, this, [this]() {
+            emit errorOccurred(QStringLiteral("GNOME Search: D-Bus session bus is not connected"));
+        });
         return;
+    }
 
     new SearchProvider2Adaptor(this);
 
-    if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors))
+    if (!bus.registerObject(objectPath, this, QDBusConnection::ExportAdaptors)) {
+        QTimer::singleShot(0, this, [this, error = bus.lastError().message()]() {
+            emit errorOccurred(QStringLiteral("GNOME Search: failed to register D-Bus object at %1: %2").arg(objectPath, error));
+        });
         return;
+    }
 
-    if (!bus.registerService(serviceName))
+    if (!bus.registerService(serviceName)) {
+        QTimer::singleShot(0, this, [this, serviceName, error = bus.lastError().message()]() {
+            emit errorOccurred(QStringLiteral("GNOME Search: failed to register D-Bus service '%1': %2").arg(serviceName, error));
+        });
         return;
+    }
 
     registered = true;
 }

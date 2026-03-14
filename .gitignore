@@ -3,3 +3,8 @@ build/
 *.a
 *.user
 .qtcreator/
+*.obj
+*.o
+CMakeUserPresets.json
+build-*/
+cmake/

@@ -57,7 +57,7 @@ elseif(WIN32)
     )
     target_link_libraries(QSearchablePropertyHandler PRIVATE ole32 propsys shlwapi uuid)
 
-    # Standalone installer helper — no Qt dependency; runs elevated for HKLM writes.
+    # Standalone installer helper (requires elevation, does not depend on Qt)
     add_executable(QSearchableWindowsInstaller
         src/installer/QSearchableWindowsInstaller.cpp
     )
@@ -85,3 +85,53 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(tests)
     add_subdirectory(example)
 endif()
+
+# --- Installation ---
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS QSearchable
+    EXPORT QSearchableTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(FILES
+    src/QSearchableIndex.h
+    src/QSearchableItem.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+if(WIN32)
+    install(TARGETS QSearchablePropertyHandler
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(TARGETS QSearchableWindowsInstaller
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif()
+
+install(EXPORT QSearchableTargets
+    FILE QSearchableTargets.cmake
+    NAMESPACE QSearchable::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QSearchable
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/QSearchableConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/QSearchableConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/QSearchableConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QSearchable
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/QSearchableConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/QSearchableConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QSearchable
+)

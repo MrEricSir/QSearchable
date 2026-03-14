@@ -24,6 +24,8 @@
 
 #include "backends/QSearchableIndexBackend.h"
 
+#include <QLoggingCategory>
+
 #ifdef Q_OS_MACOS
 #include "backends/CoreSpotlightBackend.h"
 #elif defined(Q_OS_WIN)
@@ -86,6 +88,13 @@ bool QSearchableIndex::isRelayInstance() const
 
 void QSearchableIndex::indexItems(const QList<QSearchableItem> &items)
 {
+    for (const QSearchableItem &item : items) {
+        if (item.uniqueIdentifier().isEmpty()) {
+            qWarning("QSearchableIndex::indexItems: item has an empty uniqueIdentifier, "
+                     "this may cause unexpected behavior");
+        }
+    }
+
     backend->indexItems(items);
 }
 

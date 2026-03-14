@@ -72,7 +72,10 @@ bool WindowsSearchBackend::isSupported() const
 
 void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
 {
-    QDir().mkpath(baseDir);
+    if (!QDir().mkpath(baseDir)) {
+        emit errorOccurred(QStringLiteral("Failed to create base directory: %1").arg(baseDir));
+        return;
+    }
 
     int indexed = 0;
     for (const QSearchableItem &item : items) {
@@ -82,7 +85,11 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
         }
 
         QString dir = domainDir(domain);
-        QDir().mkpath(dir);
+        if (!QDir().mkpath(dir)) {
+            qWarning("WindowsSearchBackend: failed to create domain directory: %s",
+                     qPrintable(dir));
+            continue;
+        }
 
         // Remove old file for this item (title may have changed)
         QString oldFile = findFileForId(domain, item.uniqueIdentifier());
@@ -91,7 +98,11 @@ void WindowsSearchBackend::indexItems(const QList<QSearchableItem> &items)
         }
 
         QString filePath = itemFilePath(domain, item);
-        writeItemFile(filePath, item);
+        if (!writeItemFile(filePath, item)) {
+            qWarning("WindowsSearchBackend: failed to write item file: %s",
+                     qPrintable(filePath));
+            continue;
+        }
         ++indexed;
     }
 
@@ -211,8 +222,7 @@ QString WindowsSearchBackend::itemFilePath(const QString &domain, const QSearcha
         return path;
     }
 
-    // Avoid filename collisions.
-    // TODO: Find a more elegant way to handle this.
+    // Avoid filename collisions by appending an incrementing suffix, e.g. "Title (2).ext".
     for (int i = 2; ; ++i) {
         path = dir + QLatin1Char('/') + title + QStringLiteral(" (%1).").arg(i) + fileExtension;
         if (!QFile::exists(path)) {
@@ -234,7 +244,7 @@ QString WindowsSearchBackend::findFileForId(const QString &domain, const QString
     return QString();
 }
 
-void WindowsSearchBackend::writeItemFile(const QString &filePath, const QSearchableItem &item)
+bool WindowsSearchBackend::writeItemFile(const QString &filePath, const QSearchableItem &item)
 {
     QSettings settings(filePath, QSettings::IniFormat);
     settings.setValue(QStringLiteral("UniqueIdentifier"), item.uniqueIdentifier());
@@ -249,13 +259,14 @@ void WindowsSearchBackend::writeItemFile(const QString &filePath, const QSearcha
     if (item.url().isValid()) {
         settings.setValue(QStringLiteral("URL"), item.url().toString());
     }
-    
+
     if (item.timestamp().isValid()) {
-        settings.setValue(QStringLiteral("Timestamp"), 
+        settings.setValue(QStringLiteral("Timestamp"),
         item.timestamp().toString(Qt::ISODate));
     }
 
     settings.sync();
+    return settings.status() == QSettings::NoError;
 }
 
 QString WindowsSearchBackend::parseIdFromFile(const QString &filePath) const
